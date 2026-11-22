@@ -1,0 +1,723 @@
+/* ==========================================================================
+   Site — structure, composants, mouvement
+   Sommaire
+     1. Entête et navigation
+     2. Menu mobile (dialog)
+     3. Pied de page
+     4. Sections éditoriales et folios
+     5. Emplacements photographiques et compositions
+     6. Bande d'événements
+     7. Hero
+     8. Pages intérieures
+     9. Langage de mouvement
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- 1. ENTÊTE */
+
+.site-header {
+  background: color-mix(in srgb, var(--c-bg) 86%, transparent);
+  border-bottom: var(--bw) solid transparent;
+  position: sticky;
+  top: 0;
+  transition: background var(--dur-2) var(--ease-print),
+              border-color var(--dur-2) var(--ease-print);
+  view-transition-name: site-header;
+  z-index: var(--z-header);
+}
+.site-header.is-pinned {
+  backdrop-filter: blur(10px);
+  background: color-mix(in srgb, var(--c-bg) 94%, transparent);
+  border-bottom-color: var(--c-line);
+}
+
+.site-header__inner {
+  align-items: center;
+  display: flex;
+  gap: var(--s-5);
+  justify-content: space-between;
+  min-height: var(--header-h);
+}
+
+/* Repère d'observation de l'entête : évite un écouteur de défilement. */
+.header-sentinel { height: 1px; }
+
+.brand { align-items: center; display: flex; gap: var(--s-3); }
+.brand__mark { flex: none; width: 1.5rem; }
+.brand__text {
+  display: grid;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--ls-mono);
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+.brand__text span { transition: color var(--dur-1) linear; }
+.brand__text span:last-child { color: var(--c-text-3); }
+.brand:hover .brand__text span:last-child { color: var(--c-accent-text); }
+
+/* Amélioration progressive : la rangée de liens est l'état par défaut, y
+   compris en mobile. L'interface dépendante de JavaScript (bouton + <dialog>)
+   ne prend le relais qu'une fois le menu réellement initialisé — « html.js-menu »
+   est posée par nav.js, après vérification du balisage et de <dialog>. Si les
+   modules sont bloqués, la navigation reste donc atteignable. */
+.nav { display: block; }
+.nav__list {
+  display: flex;
+  gap: clamp(var(--s-4), 2.2vw, var(--s-6));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.nav__list a {
+  color: var(--c-text-2);
+  display: inline-block;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--ls-mono);
+  padding-block: var(--s-2);
+  position: relative;
+  text-transform: uppercase;
+  transition: color var(--dur-1) linear;
+}
+.nav__list a::after {
+  background: var(--c-accent);
+  bottom: 0;
+  content: "";
+  height: var(--bw);
+  left: 0;
+  position: absolute;
+  right: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-2) var(--ease-draw);
+}
+.nav__list a:hover { color: var(--c-text); }
+.nav__list a[aria-current="page"] { color: var(--c-text); }
+.nav__list a:hover::after,
+.nav__list a[aria-current="page"]::after { transform: scaleX(1); }
+
+/* Bouton d'ouverture du menu : intitulé textuel plutôt qu'icône seule,
+   plus explicite pour les lecteurs d'écran comme à l'œil. */
+.nav-toggle {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: var(--c-text);
+  cursor: pointer;
+  display: none;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-micro);
+  gap: var(--s-3);
+  letter-spacing: var(--ls-mono);
+  min-height: 2.75rem;
+  padding: var(--s-3) 0;
+  text-transform: uppercase;
+}
+.nav-toggle__glyph { display: grid; gap: var(--s-1); width: 1.5rem; }
+.nav-toggle__glyph i {
+  background: var(--c-text);
+  height: var(--bw);
+  transition: transform var(--dur-2) var(--ease-print);
+  width: 100%;
+}
+.nav-toggle:hover .nav-toggle__glyph i:first-child { transform: translateX(25%); }
+.nav-toggle:hover .nav-toggle__glyph i:last-child { transform: translateX(-25%); }
+
+@media (max-width: 63.999em) {
+  /* Rangée de repli : la marque occupe la première ligne, les liens la
+     seconde. Les deux ne se disputent plus la largeur, ce qui supprime le
+     chevauchement observé à 320 et 390 px.
+
+     L'entête est alors plus haut, et « --header-h » doit suivre : il règle à
+     la fois la hauteur minimale de l'entête, le décalage du rail collant du
+     portfolio et le scroll-padding des ancres. Sans cela, le rail se glissait
+     derrière l'entête et devenait inatteignable. La valeur est légèrement
+     supérieure à la hauteur mesurée des deux lignes, afin que la hauteur
+     minimale la fixe exactement, quelles que soient les métriques de police. */
+  html:not(.js-menu) { --header-h: 7rem; }
+  .site-header__inner { flex-wrap: wrap; row-gap: var(--s-1); }
+  .nav { flex: 1 0 100%; }
+  .nav__list {
+    overflow-x: auto;
+    padding-block: var(--s-2);
+    scrollbar-width: none;
+  }
+  .nav__list::-webkit-scrollbar { display: none; }
+
+  /* Menu initialisé : la rangée cède la place au bouton. */
+  html.js-menu .site-header__inner { flex-wrap: nowrap; row-gap: 0; }
+  html.js-menu .nav { display: none; }
+  html.js-menu .nav-toggle { display: flex; }
+}
+
+/* ------------------------------------------------------------ 2. MENU MOBILE */
+
+.menu {
+  background: var(--c-bg);
+  border: 0;
+  color: var(--c-text);
+  height: 100%;
+  max-height: none;
+  max-width: none;
+  opacity: 0;
+  padding: 0;
+  transition: opacity var(--dur-2) var(--ease-print),
+              display var(--dur-2) allow-discrete,
+              overlay var(--dur-2) allow-discrete;
+  width: 100%;
+}
+.menu[open] { opacity: 1; }
+@starting-style { .menu[open] { opacity: 0; } }
+.menu::backdrop { background: color-mix(in srgb, var(--c-bg) 88%, transparent); }
+
+html:has(.menu[open]) { overflow: hidden; }
+
+.menu__inner {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100%;
+  padding-block: var(--s-4) var(--s-7);
+}
+.menu__top {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  min-height: var(--header-h);
+}
+.menu__close {
+  background: none;
+  border: 0;
+  color: var(--c-text);
+  cursor: pointer;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--ls-mono);
+  min-height: 2.75rem;
+  padding: var(--s-3) 0;
+  text-transform: uppercase;
+}
+.menu__list {
+  align-content: center;
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.menu__list li { border-top: var(--bw) solid var(--c-line); }
+.menu__list li:last-child { border-bottom: var(--bw) solid var(--c-line); }
+.menu__list a {
+  align-items: baseline;
+  display: flex;
+  font-family: var(--ff-display);
+  font-size: clamp(1.875rem, 10vw, 3.25rem);
+  gap: var(--s-4);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  padding-block: clamp(var(--s-3), 2.2vh, var(--s-5));
+}
+.menu__list a[aria-current="page"] { color: var(--c-accent-text); }
+.menu__num {
+  color: var(--c-text-3);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--ls-mono);
+}
+.menu__foot { color: var(--c-text-3); }
+
+/* ------------------------------------------------------------ 3. PIED DE PAGE */
+
+.site-footer {
+  border-top: var(--bw) solid var(--c-line);
+  margin-top: var(--space-section);
+}
+.site-footer__inner {
+  display: grid;
+  gap: var(--s-7);
+  padding-block: var(--s-7) var(--s-6);
+}
+.site-footer__nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-4) var(--s-5);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.site-footer__nav a {
+  color: var(--c-text-2);
+  display: inline-block;
+  padding-block: var(--s-2); /* cible d'au moins 24 px : lien de navigation autonome */
+  transition: color var(--dur-1) linear;
+}
+.site-footer__nav a:hover { color: var(--c-text); }
+.site-footer__legal { color: var(--c-text-3); font-size: var(--fs-small); max-width: 54ch; }
+.site-footer__legal p + p { margin-top: var(--s-3); }
+@media (min-width: 64em) {
+  .site-footer__inner { grid-template-columns: minmax(0, 1fr) auto; }
+  .site-footer__nav { order: 2; }
+}
+
+/* ------------------------------------------------- 4. SECTIONS ET FOLIOS */
+
+.section { padding-block: var(--space-section); }
+.section + .section { border-top: var(--bw) solid var(--c-line); }
+
+.section__head {
+  display: grid;
+  gap: var(--s-4);
+  margin-bottom: clamp(var(--s-6), 5vw, var(--s-9));
+}
+.section__title { max-width: 26ch; }
+.section__note { color: var(--c-text-2); max-width: 46ch; }
+
+/* Folio : numéro de section fantôme, hérité de la mise en page imprimée. */
+.folio {
+  color: transparent;
+  font-family: var(--ff-display);
+  font-size: var(--fs-folio);
+  line-height: 0.78;
+  -webkit-text-stroke: var(--bw) var(--c-line-strong);
+  user-select: none;
+}
+
+@media (min-width: 64em) {
+  .section__head {
+    align-items: start;
+    column-gap: var(--s-6);
+    grid-template-columns: 7rem minmax(0, 1fr) minmax(0, 21rem);
+  }
+  .section__head .folio { grid-area: 1 / 1 / span 2 / span 1; }
+  .section__head .eyebrow { grid-area: 1 / 2; }
+  .section__title { grid-area: 2 / 2; }
+  .section__note { grid-area: 2 / 3; justify-self: end; }
+}
+
+/* -------------------------------- 5. EMPLACEMENTS ET COMPOSITIONS */
+
+/* Un « plate » est un emplacement photographique : rebord de tirage,
+   image, repère de vue. C'est l'unité de base de toute composition. */
+.plate { container: plate / inline-size; margin: 0; position: relative; }
+.plate__frame {
+  background: var(--c-bg-plate);
+  box-shadow: inset 0 0 0 var(--bw) var(--c-line);
+  display: block;
+  overflow: hidden;
+  position: relative;
+}
+.plate img {
+  -webkit-user-drag: none;
+  width: 100%;
+}
+.plate__caption {
+  align-items: baseline;
+  border-top: var(--bw) solid var(--c-line);
+  color: var(--c-text-3);
+  display: flex;
+  gap: var(--s-3);
+  justify-content: space-between;
+  margin-top: var(--s-3);
+  padding-top: var(--s-2);
+}
+.plate__caption b { color: var(--c-text-2); font-weight: 400; }
+.plate__ref { flex: none; }
+
+/* Dans un emplacement étroit, la légende s'empile au lieu de couper son
+   intitulé en deux. Mesuré sur la largeur de l'emplacement lui-même, et non
+   sur celle du viewport : le même emplacement est large sur mobile en pleine
+   colonne et étroit en vis-à-vis sur tablette. */
+@container plate (max-width: 22rem) {
+  .plate__caption { display: grid; gap: var(--s-1); justify-content: start; }
+}
+
+/* Survol et focus : l'image se « relève » légèrement, le repère s'allume. */
+@media (hover: hover) {
+  .plate__frame img { transition: transform var(--dur-3) var(--ease-print), filter var(--dur-3) var(--ease-print); }
+  .plate:hover .plate__frame img { filter: brightness(1.08) contrast(1.03); transform: scale(1.02); }
+  .plate:hover .plate__ref { color: var(--c-accent-text); }
+  .plate__ref { transition: color var(--dur-2) linear; }
+}
+
+/* Compositions — chacune est une intention de mise en page, pas une grille
+   générique répétée. Mobile : colonne unique rythmée par les décalages. */
+.composition { display: grid; gap: clamp(var(--s-5), 4vw, var(--s-8)); }
+
+/* Filet de séparation entre deux compositions. */
+.rule--spaced { margin-block: clamp(var(--s-7), 8vw, var(--s-10)); }
+
+@media (min-width: 48em) {
+  /* Ouverture : grande image à gauche, deux vues empilées à droite. */
+  .composition--lead { align-items: start; grid-template-columns: 1.55fr 1fr; }
+  .composition--lead > :first-child { grid-row: 1 / span 2; }
+
+  /* Diptyque décalé : la seconde image descend d'un cran. */
+  .composition--duo { grid-template-columns: 1fr 1fr; }
+  .composition--duo > :nth-child(2) { margin-top: clamp(var(--s-6), 8vw, var(--s-10)); }
+
+  /* Triptyque : une vue panoramique, deux vues serrées. */
+  .composition--trio { grid-template-columns: repeat(3, 1fr); }
+  .composition--trio > :first-child { grid-column: span 2; }
+
+  /* Image dominante, texte en vis-à-vis aligné sur sa base. La colonne de
+     texte garde une largeur de lecture confortable. */
+  .composition--spread { align-items: end; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+  .composition--spread .prose { max-width: 34ch; }
+}
+
+/* Albums : seule grille réellement répétitive du site, parce qu'un album est
+   une unité comparable. Le rythme éditorial est porté par les autres blocs.
+
+   « auto-fill » et non « auto-fit » : avec auto-fit, les pistes vides sont
+   supprimées et deux albums seuls s'étiraient jusqu'à 612 px sur grand écran.
+   La largeur de rendu dépendait alors du nombre d'albums publiés — impossible
+   à déclarer dans « sizes », donc couverture systématiquement sous-déclarée
+   (voir evenements.html). Avec auto-fill, le nombre de colonnes ne dépend que
+   de la place disponible, et la grille garde son pas quel que soit le nombre
+   d'albums. */
+.composition--albums { grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); }
+
+@media (min-width: 64em) {
+  .composition--duo > :nth-child(1) { margin-right: var(--s-7); }
+  .composition--duo > :nth-child(2) { margin-left: var(--s-7); }
+}
+
+/* Décalage éditorial, sur grand écran uniquement. */
+@media (min-width: 64em) {
+  .offset-left { margin-right: 8%; }
+}
+
+/* --------------------------------------------- 6. BANDE D'ÉVÉNEMENTS */
+
+/* Défilement horizontal natif, avec accroche. Le conteneur est focusable
+   pour rester pilotable au clavier (flèches), sans script. */
+.strip {
+  display: grid;
+  gap: var(--gutter);
+  grid-auto-columns: min(78vw, 24rem);
+  grid-auto-flow: column;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-bottom: var(--s-4);
+  scroll-padding-inline: var(--gutter);
+  scroll-snap-type: x proximity;
+}
+.strip > * { scroll-snap-align: start; }
+.strip:focus-visible { outline-offset: 6px; }
+.strip::-webkit-scrollbar { height: 2px; }
+.strip::-webkit-scrollbar-thumb { background: var(--c-line-strong); }
+.strip::-webkit-scrollbar-track { background: var(--c-line); }
+@media (min-width: 64em) {
+  .strip { grid-auto-columns: minmax(0, 26rem); }
+}
+
+.strip__hint { color: var(--c-text-3); margin-top: var(--s-4); }
+
+/* Renvoi vers la page complémentaire, en fin de section. */
+.section__more { margin-top: clamp(var(--s-6), 5vw, var(--s-8)); }
+
+/* ----------------------------------------------------------------- 7. HERO */
+
+.hero {
+  display: grid;
+  padding-bottom: var(--space-section);
+  padding-top: clamp(var(--s-6), 7vh, var(--s-9));
+  position: relative;
+}
+.hero__grid { display: grid; gap: clamp(var(--s-6), 6vw, var(--s-8)); }
+.hero__text { align-content: center; display: grid; gap: var(--s-5); }
+
+.hero__title {
+  font-size: var(--fs-display);
+  letter-spacing: var(--ls-display);
+  line-height: var(--lh-tight);
+  margin-block: var(--s-2);
+}
+.hero__title span { display: block; }
+
+/* Bloc-titre : le nom en romain, la discipline en italique sous lui. Choix
+   assumé de registre magazine, et non l'italique serif décoratif des pages
+   d'accueil génériques — la fonte est un Palatino système, et le nom ne
+   bascule jamais en italique. */
+.hero__title .is-italic {
+  font-style: italic;
+  letter-spacing: -0.045em;
+  margin-left: 0.07em;
+  margin-top: -0.12em;
+}
+
+/* Appel au défilement : filet qui s'étire vers la section suivante. */
+.cue {
+  align-items: center;
+  color: var(--c-text-2);
+  display: inline-flex;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-micro);
+  gap: var(--s-3);
+  justify-self: start;
+  letter-spacing: var(--ls-mono);
+  min-height: 2.75rem;
+  text-transform: uppercase;
+  transition: color var(--dur-1) linear;
+}
+.cue__rule {
+  background: currentcolor;
+  display: block;
+  height: var(--bw);
+  transition: width var(--dur-2) var(--ease-draw);
+  width: 3rem;
+}
+.cue:hover { color: var(--c-accent-text); }
+.cue:hover .cue__rule { width: 4.5rem; }
+
+/* Le hero ne passe sur deux colonnes qu'à partir du grand écran : en deçà,
+   la colonne de texte serait trop étroite pour la taille du titre. */
+@media (min-width: 64em) {
+  .hero { align-content: center; min-height: min(92svh, 56rem); }
+  .hero__grid { align-items: center; grid-template-columns: 1.15fr 0.85fr; }
+  .hero__plate { margin-top: var(--s-7); }
+}
+
+/* Métadonnées d'ouverture, posées comme sur une planche contact. */
+.hero__foot { margin-top: clamp(var(--s-6), 6vw, var(--s-8)); }
+.hero__meta {
+  color: var(--c-text-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3) var(--s-5);
+  justify-content: space-between;
+  padding-top: var(--s-3);
+}
+
+/* ------------------------------------------------------ 8. PAGES INTÉRIEURES */
+
+/* La section qui suit apporte déjà son propre espace supérieur : l'en-tête
+   de page ne le double pas. */
+.page-head { padding-block: clamp(var(--s-7), 9vw, var(--s-10)) var(--s-6); }
+.page-head__inner { display: grid; gap: var(--s-5); }
+.page-head h1 { max-width: 20ch; }
+@media (min-width: 64em) {
+  .page-head__inner { align-items: end; grid-template-columns: 1.3fr 1fr; gap: var(--s-8); }
+}
+
+/* Une page dotée d'un rail empile deux éléments collants : les ancres sont
+   décalées d'autant. */
+html:has(.rail) { scroll-padding-top: calc(var(--header-h) + 4.5rem); }
+
+/* Rail de catégories : index collant, repère actif piloté par aria-current. */
+.rail {
+  background: color-mix(in srgb, var(--c-bg) 92%, transparent);
+  border-block: var(--bw) solid var(--c-line);
+  position: sticky;
+  top: calc(var(--header-h) - 1px);
+  z-index: 10;
+}
+.rail ul {
+  display: flex;
+  gap: var(--s-5);
+  list-style: none;
+  margin: 0;
+  overflow-x: auto;
+  padding: 0;
+  scrollbar-width: none;
+}
+.rail ul::-webkit-scrollbar { display: none; }
+.rail a {
+  color: var(--c-text-3);
+  display: inline-block;
+  font-family: var(--ff-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--ls-mono);
+  padding-block: var(--s-4);
+  position: relative;
+  text-transform: uppercase;
+  transition: color var(--dur-1) linear;
+  white-space: nowrap;
+}
+.rail a:hover { color: var(--c-text-2); }
+.rail a[aria-current] { color: var(--c-text); }
+.rail a[aria-current]::after {
+  background: var(--c-accent);
+  bottom: 0;
+  content: "";
+  height: 2px;
+  left: 0;
+  position: absolute;
+  right: 0;
+}
+
+/* Appel de contact : discret, une ligne, pas de bloc marketing. */
+.invite { display: grid; gap: var(--s-5); }
+.invite__title { max-width: 30ch; }
+@media (min-width: 64em) {
+  .invite { align-items: end; grid-template-columns: 1fr auto; gap: var(--s-8); }
+}
+
+/* Canaux de contact */
+.channels { display: grid; gap: var(--s-5); margin: 0; }
+.channels > div { border-top: var(--bw) solid var(--c-line); padding-top: var(--s-3); }
+.channels dt {
+  color: var(--c-text-3);
+  font-family: var(--ff-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--ls-mono);
+  text-transform: uppercase;
+}
+.channels dd { font-size: var(--fs-lead); margin: var(--s-2) 0 0; }
+@media (min-width: 48em) {
+  .channels { grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: var(--s-6); }
+}
+
+/* Page À propos : le portrait accompagne la lecture, le récit est découpé en
+   chapitres indépendants pour rester simple à compléter. */
+.about { display: grid; gap: var(--s-7); }
+.about__chapter { margin-top: clamp(var(--s-7), 6vw, var(--s-9)); }
+.about__chapter + .about__chapter {
+  border-top: var(--bw) solid var(--c-line);
+  padding-top: clamp(var(--s-6), 5vw, var(--s-8));
+}
+.about__chapter h2 { margin-bottom: var(--s-4); }
+.about__chapter > .eyebrow { margin-bottom: var(--s-2); }
+/* Rappel du contenu attendu dans un chapitre encore vide. */
+.about__hint { color: var(--c-text-3); font-size: var(--fs-small); margin-top: var(--s-3); max-width: 44ch; }
+@media (min-width: 64em) {
+  .about { align-items: start; gap: var(--s-9); grid-template-columns: 0.75fr 1.25fr; }
+  .about__portrait { position: sticky; top: calc(var(--header-h) + var(--s-5)); }
+}
+
+/* État d'attente des albums : les blocs qui le composent respirent. */
+[data-albums-empty] > * + * { margin-top: clamp(var(--s-5), 4vw, var(--s-7)); }
+
+/* Compte rendu de chargement des albums (voir assets/js/albums.js) : fichier
+   injoignable, données invalides, albums ignorés. Distinct de « .pending »,
+   qui marque un contenu non encore fourni et non une anomalie. */
+.albums-status {
+  border-left: 2px solid var(--c-accent);
+  color: var(--c-text-2);
+  font-size: var(--fs-small);
+  margin-top: var(--s-5);
+  max-width: 48ch;
+  padding-left: var(--s-4);
+}
+
+/* Album rendu depuis events.json (voir assets/js/albums.js). */
+.album__title { margin-top: var(--s-4); }
+.album__desc { color: var(--c-text-2); margin-top: var(--s-3); max-width: 42ch; }
+.album .plate__caption { flex-wrap: wrap; justify-content: flex-start; }
+
+/* Page 404 */
+.lost { align-content: center; display: grid; gap: var(--s-5); min-height: 70svh; padding-block: var(--s-9); }
+
+/* Fenêtre d'application installée : les zones sûres sont réservées dès
+   maintenant pour que la future feature PWA n'ait pas à reprendre ce CSS.
+   Aucun manifest ni service worker n'est fourni dans PHOTO-01. */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .site-header__inner { padding-top: env(safe-area-inset-top, 0px); }
+  .menu__inner { padding-top: env(safe-area-inset-top, 0px); }
+  .site-footer__inner { padding-bottom: max(var(--s-6), env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ----------------------------------------------- 9. LANGAGE DE MOUVEMENT */
+
+/* Séquence d'entrée. Les éléments ne sont masqués que si le script en ligne
+   de <head> a pu poser la classe « js » ; la classe « is-ready » est posée
+   deux images plus tard par ce même script, sans dépendre d'un module.
+   Sans JavaScript, rien n'est masqué. */
+html.js [data-intro] {
+  opacity: 0;
+  transform: translateY(1.25rem);
+  transition: opacity var(--dur-4) var(--ease-print),
+              transform var(--dur-4) var(--ease-print);
+}
+html.js.is-ready [data-intro] { opacity: 1; transform: none; }
+html.js [data-intro="2"] { transition-delay: calc(var(--stagger) * 1); }
+html.js [data-intro="3"] { transition-delay: calc(var(--stagger) * 2); }
+html.js [data-intro="4"] { transition-delay: calc(var(--stagger) * 3); }
+html.js [data-intro="5"] { transition-delay: calc(var(--stagger) * 4); }
+
+/* Filets qui se tracent à l'ouverture. */
+html.js [data-draw] { transform: scaleX(0); transform-origin: left; transition: transform var(--dur-4) var(--ease-draw); }
+html.js.is-ready [data-draw] { transform: scaleX(1); }
+
+/* « Développement » du tirage principal : l'image monte en densité pendant
+   que le voile se retire. Le voile ne couvre qu'un tiers de l'image, afin
+   que l'essentiel du tirage soit peint dès la première image et que le plus
+   grand rendu de contenu ne soit pas retardé. Sans script, l'image reste
+   simplement complète. */
+html.js.is-ready [data-develop] {
+  animation: develop var(--dur-3) var(--ease-print) both;
+}
+@keyframes develop {
+  from { clip-path: inset(0 0 32% 0); filter: brightness(0.42) contrast(0.85); transform: scale(1.03); }
+  60%  { filter: brightness(0.94) contrast(0.98); }
+  to   { clip-path: inset(0 0 0 0); filter: none; transform: none; }
+}
+
+/* Révélation au défilement, pilotée par IntersectionObserver.
+   L'état masqué est entièrement conditionné à « html.js » : sans JavaScript,
+   aucune de ces propriétés n'est appliquée. Rétablir la seule opacité ne
+   suffisait pas — « wipe » rogne l'image par clip-path et la décale par
+   transform, ce qui amputait couvertures et légendes. */
+html.js [data-reveal] {
+  opacity: 0;
+  transition: opacity var(--dur-3) var(--ease-print),
+              transform var(--dur-3) var(--ease-print),
+              clip-path var(--dur-3) var(--ease-draw);
+}
+html.js [data-reveal="rise"] { transform: translateY(1.5rem); }
+html.js [data-reveal="wipe"] { clip-path: inset(0 0 24% 0); transform: translateY(0.75rem); }
+/* Filet qui se trace à l'approche, prolongement du geste d'ouverture. */
+html.js [data-reveal="draw"] { opacity: 1; transform: scaleX(0); transform-origin: left; }
+html.js [data-reveal].is-revealed { clip-path: none; opacity: 1; transform: none; }
+
+/* Filet de sécurité : si le module de révélation n'a pas démarré (voir le
+   script en ligne de chaque page), plus rien ne reste masqué. */
+html.no-reveal [data-reveal] { clip-path: none; opacity: 1; transform: none; }
+
+[data-reveal-group] > :nth-child(2) { transition-delay: calc(var(--stagger) * 1); }
+[data-reveal-group] > :nth-child(3) { transition-delay: calc(var(--stagger) * 2); }
+[data-reveal-group] > :nth-child(4) { transition-delay: calc(var(--stagger) * 3); }
+
+/* Barre de progression de lecture : animation pilotée par le défilement,
+   sans écouteur JavaScript. Ignorée là où elle n'est pas prise en charge. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .progress {
+      background: var(--c-accent);
+      height: 2px;
+      left: 0;
+      position: fixed;
+      top: 0;
+      transform-origin: left;
+      width: 100%;
+      z-index: calc(var(--z-header) + 1);
+      animation: progress linear;
+      animation-timeline: scroll(root block);
+    }
+    @keyframes progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  }
+}
+
+/* Transition entre pages : fondu natif, sans script, sans impact SEO. */
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: vt-out var(--dur-1) var(--ease-print) both; }
+::view-transition-new(root) { animation: vt-in var(--dur-2) var(--ease-print) both; }
+@keyframes vt-out { to { opacity: 0; } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(0.5rem); } }
+
+/* ------------------------------------------- Réduction des animations ------
+   Le contenu doit rester intégralement accessible : aucun élément ne peut
+   demeurer masqué lorsque les animations sont désactivées. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+  html.js [data-intro],
+  html.js [data-reveal] { opacity: 1 !important; transform: none !important; clip-path: none !important; }
+  html.js [data-draw] { transform: none !important; }
+  html.js.is-ready [data-develop] { animation: none !important; }
+  .plate:hover .plate__frame img { transform: none; filter: none; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; }
+}

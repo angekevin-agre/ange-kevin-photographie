@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>À propos — Ange Kevin Photographie</title>
+<meta name="description" content="Ange Kevin Photographie : portraits, cérémonies, événements et reportages. Le récit du photographe sera publié sur cette page.">
+<meta name="theme-color" content="#0a0a0b">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ange Kevin Photographie">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="À propos — Ange Kevin Photographie">
+<meta property="og:description" content="Ange Kevin Photographie : portraits, cérémonies, événements et reportages. Le récit du photographe sera publié sur cette page.">
+<meta property="og:image" content="assets/img/og-cover.png">
+<meta property="og:image:alt" content="Ange Kevin Photographie">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/site.css">
+<link rel="modulepreload" href="assets/js/main.js">
+<link rel="modulepreload" href="assets/js/nav.js">
+<link rel="modulepreload" href="assets/js/reveal.js">
+<link rel="modulepreload" href="assets/js/albums.js">
+<script>
+  /* Marque la disponibilité de JavaScript, puis déclenche la séquence
+     d'entrée dès la deuxième image. Indépendant des modules : si leur
+     chargement échoue, le contenu s'affiche malgré tout. */
+  var root = document.documentElement;
+  root.className = "js";
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () { root.classList.add("is-ready"); });
+  });
+  /* Filet de sécurité : si le module de révélation n'a pas démarré au bout
+     de trois secondes, les photographies sont affichées sans attendre. */
+  setTimeout(function () {
+    if (!root.dataset.revealReady) root.classList.add("no-reveal");
+  }, 3000);
+</script>
+</head>
+<body>
+
+<div class="progress" aria-hidden="true"></div>
+<a class="skip" href="#contenu">Aller au contenu</a>
+
+<header class="site-header" data-header>
+  <div class="site-header__inner shell">
+    <a class="brand" href="index.html">
+      <img class="brand__mark" src="assets/img/logo.svg" alt="" width="32" height="32">
+      <span class="brand__text">
+        <span>Ange Kevin</span>
+        <span>Photographie</span>
+      </span>
+      <span class="visually-hidden">— retour à l'accueil</span>
+    </a>
+
+    <nav class="nav" aria-label="Navigation principale">
+      <ul class="nav__list">
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="portfolio.html">Portfolio</a></li>
+        <li><a href="evenements.html">Événements</a></li>
+        <li><a href="a-propos.html" aria-current="page">À propos</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+
+    <button class="nav-toggle" type="button" aria-haspopup="dialog" data-menu-open>
+      <span class="nav-toggle__glyph" aria-hidden="true"><i></i><i></i></span>
+      <span>Menu</span>
+    </button>
+  </div>
+</header>
+<div class="header-sentinel" data-header-sentinel aria-hidden="true"></div>
+
+<main id="contenu">
+
+  <section class="page-head">
+    <div class="page-head__inner shell">
+      <div>
+        <p class="eyebrow" data-intro="1">À propos</p>
+        <h1 data-intro="2">Derrière l'appareil</h1>
+      </div>
+      <p class="lead" data-intro="3">
+        Le récit sera publié ici, en quatre chapitres, dans les mots du photographe.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="t-recit">
+    <div class="shell about">
+      <figure class="plate about__portrait" data-reveal="wipe">
+        <span class="plate__frame">
+          <img src="assets/img/placeholders/plate-4x5-a.svg" width="1440" height="1800"
+               alt="" fetchpriority="high" decoding="async">
+        </span>
+        <figcaption class="plate__caption mono">
+          <b>Portrait à venir</b><span class="plate__ref">AP/01 · 4:5</span>
+        </figcaption>
+      </figure>
+
+      <div>
+        <h2 class="visually-hidden" id="t-recit">Récit</h2>
+        <div class="prose" data-reveal="rise">
+          <p>
+            Ange Kevin Photographie réunit quatre terrains : le portrait, la
+            cérémonie, l'événement et le reportage. Les images publiées sont
+            choisies après chaque séance, une par une.
+          </p>
+          <p>
+            Les chapitres ci-dessous attendent le texte du photographe. Rien
+            n'a été rédigé à sa place.
+          </p>
+        </div>
+
+        <section class="about__chapter" id="decouverte" aria-labelledby="t-decouverte"
+                 data-reveal="rise">
+          <p class="eyebrow">01 — Chapitre</p>
+          <h2 id="t-decouverte">La découverte</h2>
+          <!-- À COMPLÉTER : remplacer le paragraphe .pending ci-dessous par le
+               texte fourni. Plusieurs paragraphes <p> sont admis. -->
+          <p class="pending">Texte à venir</p>
+          <p class="about__hint">Comment la photographie est entrée dans mon quotidien.</p>
+        </section>
+
+        <section class="about__chapter" id="parcours" aria-labelledby="t-parcours"
+                 data-reveal="rise">
+          <p class="eyebrow">02 — Chapitre</p>
+          <h2 id="t-parcours">Le parcours</h2>
+          <!-- À COMPLÉTER : remplacer le paragraphe .pending ci-dessous par le
+               texte fourni. Plusieurs paragraphes <p> sont admis. -->
+          <p class="pending">Texte à venir</p>
+          <p class="about__hint">Les étapes, les apprentissages, les rencontres.</p>
+        </section>
+
+        <section class="about__chapter" id="experiences" aria-labelledby="t-experiences"
+                 data-reveal="rise">
+          <p class="eyebrow">03 — Chapitre</p>
+          <h2 id="t-experiences">Les expériences</h2>
+          <!-- À COMPLÉTER : remplacer le paragraphe .pending ci-dessous par le
+               texte fourni. Plusieurs paragraphes <p> sont admis. -->
+          <p class="pending">Texte à venir</p>
+          <p class="about__hint">Les séances et les événements qui ont compté.</p>
+        </section>
+
+        <section class="about__chapter" id="vision" aria-labelledby="t-vision"
+                 data-reveal="rise">
+          <p class="eyebrow">04 — Chapitre</p>
+          <h2 id="t-vision">La vision</h2>
+          <!-- À COMPLÉTER : remplacer le paragraphe .pending ci-dessous par le
+               texte fourni. Plusieurs paragraphes <p> sont admis. -->
+          <p class="pending">Texte à venir</p>
+          <p class="about__hint">Ce que je cherche dans une image, et pourquoi.</p>
+        </section>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="site-footer__inner shell">
+    <nav class="site-footer__nav mono" aria-label="Navigation de pied de page">
+      <ul>
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="portfolio.html">Portfolio</a></li>
+        <li><a href="evenements.html">Événements</a></li>
+        <li><a href="a-propos.html">À propos</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="site-footer__legal">
+      <p>© 2026 Ange Kevin Photographie.</p>
+      <p>
+        Les photographies publiées sur ce site sont protégées par le droit
+        d'auteur. Toute reproduction, diffusion ou réutilisation, même
+        partielle, est interdite sans autorisation écrite.
+      </p>
+    </div>
+  </div>
+</footer>
+
+<dialog class="menu" id="menu" aria-label="Navigation principale" data-menu>
+  <div class="menu__inner shell">
+    <div class="menu__top">
+      <p class="eyebrow">Navigation</p>
+      <button class="menu__close" type="button" data-menu-close>Fermer</button>
+    </div>
+    <ul class="menu__list">
+      <li><a href="index.html"><span class="menu__num" aria-hidden="true">01</span>Accueil</a></li>
+      <li><a href="portfolio.html"><span class="menu__num" aria-hidden="true">02</span>Portfolio</a></li>
+      <li><a href="evenements.html"><span class="menu__num" aria-hidden="true">03</span>Événements</a></li>
+      <li><a href="a-propos.html" aria-current="page"><span class="menu__num" aria-hidden="true">04</span>À propos</a></li>
+      <li><a href="contact.html"><span class="menu__num" aria-hidden="true">05</span>Contact</a></li>
+    </ul>
+    <p class="menu__foot mono">Portraits · Cérémonies · Événements · Reportages</p>
+  </div>
+</dialog>
+
+<script>
+  /* Révèle immédiatement ce qui est déjà dans la fenêtre. Volontairement en
+     ligne et en fin de page : exécuté pendant l'analyse du document, sans
+     requête, donc sans retarder le plus grand rendu de contenu. La
+     révélation au défilement du reste est prise en charge par reveal.js. */
+  for (var noeuds = document.querySelectorAll("[data-reveal]"), i = 0; i < noeuds.length; i++) {
+    if (noeuds[i].getBoundingClientRect().top < window.innerHeight) {
+      noeuds[i].classList.add("is-revealed");
+    }
+  }
+</script>
+<script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

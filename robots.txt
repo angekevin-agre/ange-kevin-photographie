@@ -1,0 +1,23 @@
+User-agent: *
+Allow: /
+
+# Portée réelle de ce fichier
+# ---------------------------
+# Un robot ne lit robots.txt qu'à la RACINE d'un hôte. Sur un site de projet
+# GitHub Pages, le site est publié sous un sous-chemin : ce fichier se trouve
+# donc à https://<compte>.github.io/<dépôt>/robots.txt, une adresse qu'aucun
+# robot ne consulte. Celle qui fait foi, https://<compte>.github.io/robots.txt,
+# relève du dépôt « <compte>.github.io » et non de celui-ci.
+#
+# Ce fichier ne contrôle donc PAS l'exploration tant que le site est publié
+# sous un sous-chemin. Il prend effet dans deux cas seulement :
+#   - un domaine propre servant ce site à sa racine ;
+#   - une publication en site d'utilisateur (dépôt <compte>.github.io).
+#
+# Sans conséquence ici : le site n'interdit l'accès à rien. La directive
+# Sitemap que tools/finalize-urls.mjs écrira ci-dessous subira la même limite ;
+# sous un sous-chemin, le sitemap doit être déclaré directement dans l'outil
+# pour webmasters du moteur concerné.
+#
+# La directive Sitemap sera ajoutée en même temps que sitemap.xml, une fois
+# l'URL publique confirmée : node tools/finalize-urls.mjs <url>

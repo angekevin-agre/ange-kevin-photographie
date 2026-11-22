@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Base de résolution des chemins relatifs.
+     GitHub Pages sert cette page pour toute URL inexistante en conservant
+     l'adresse demandée : « /<dépôt>/albums/2026/ete » par exemple. Les chemins
+     relatifs se résoudraient alors depuis « /<dépôt>/albums/2026/ », et styles,
+     scripts, logo et liens de navigation échoueraient tous.
+
+     La base est donc écrite en dur — sous-chemin de publication du dépôt — afin
+     que la page fonctionne même sans JavaScript, cas réel du déploiement. Le
+     script qui suit la ramène à la racine lorsque le site n'est pas servi sous
+     ce sous-chemin (serveur local, domaine propre). Un seul endroit à modifier
+     si le dépôt est renommé. -->
+<base href="/ange-kevin-photographie/">
+<script>
+  (function () {
+    var base = document.querySelector("base");
+    var sousChemin = base.getAttribute("href");
+    if (window.location.pathname.indexOf(sousChemin) !== 0) base.setAttribute("href", "/");
+  })();
+</script>
+
+<title>Page introuvable — Ange Kevin Photographie</title>
+<meta name="description" content="La page demandée n'existe pas sur le site d'Ange Kevin Photographie. Revenir à l'accueil pour retrouver le portfolio et les événements.">
+<meta name="theme-color" content="#0a0a0b">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ange Kevin Photographie">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="Page introuvable — Ange Kevin Photographie">
+<meta property="og:description" content="La page demandée n'existe pas sur le site d'Ange Kevin Photographie. Revenir à l'accueil pour retrouver le portfolio et les événements.">
+<meta property="og:image" content="assets/img/og-cover.png">
+<meta property="og:image:alt" content="Ange Kevin Photographie">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/site.css">
+<link rel="modulepreload" href="assets/js/main.js">
+<link rel="modulepreload" href="assets/js/nav.js">
+<link rel="modulepreload" href="assets/js/reveal.js">
+<link rel="modulepreload" href="assets/js/albums.js">
+<meta name="robots" content="noindex, follow">
+<script>
+  /* Marque la disponibilité de JavaScript, puis déclenche la séquence
+     d'entrée dès la deuxième image. Indépendant des modules : si leur
+     chargement échoue, le contenu s'affiche malgré tout. */
+  var root = document.documentElement;
+  root.className = "js";
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () { root.classList.add("is-ready"); });
+  });
+  /* Filet de sécurité : si le module de révélation n'a pas démarré au bout
+     de trois secondes, les photographies sont affichées sans attendre. */
+  setTimeout(function () {
+    if (!root.dataset.revealReady) root.classList.add("no-reveal");
+  }, 3000);
+</script>
+</head>
+<body>
+
+<div class="progress" aria-hidden="true"></div>
+<!-- Une ancre nue (« #contenu ») résoudrait contre <base>, pas contre l'URL
+     demandée : le lien quitterait la page pour l'accueil. En passant par le
+     nom du fichier, la résolution via <base> retombe sur cette page elle-même,
+     avec ou sans JavaScript. -->
+<a class="skip" href="404.html#contenu">Aller au contenu</a>
+
+<header class="site-header" data-header>
+  <div class="site-header__inner shell">
+    <a class="brand" href="index.html">
+      <img class="brand__mark" src="assets/img/logo.svg" alt="" width="32" height="32">
+      <span class="brand__text">
+        <span>Ange Kevin</span>
+        <span>Photographie</span>
+      </span>
+      <span class="visually-hidden">— retour à l'accueil</span>
+    </a>
+
+    <nav class="nav" aria-label="Navigation principale">
+      <ul class="nav__list">
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="portfolio.html">Portfolio</a></li>
+        <li><a href="evenements.html">Événements</a></li>
+        <li><a href="a-propos.html">À propos</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+
+    <button class="nav-toggle" type="button" aria-haspopup="dialog" data-menu-open>
+      <span class="nav-toggle__glyph" aria-hidden="true"><i></i><i></i></span>
+      <span>Menu</span>
+    </button>
+  </div>
+</header>
+<div class="header-sentinel" data-header-sentinel aria-hidden="true"></div>
+
+<main id="contenu">
+
+  <section class="shell lost">
+    <p class="eyebrow" data-intro="1">Erreur 404</p>
+    <h1 data-intro="2">Cette page n'existe pas</h1>
+    <p class="lead" data-intro="3">
+      Le lien est peut-être ancien, ou l'adresse incomplète.
+    </p>
+    <p data-intro="4">
+      <a class="link" href="index.html">Retour à l'accueil</a>
+    </p>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="site-footer__inner shell">
+    <nav class="site-footer__nav mono" aria-label="Navigation de pied de page">
+      <ul>
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="portfolio.html">Portfolio</a></li>
+        <li><a href="evenements.html">Événements</a></li>
+        <li><a href="a-propos.html">À propos</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="site-footer__legal">
+      <p>© 2026 Ange Kevin Photographie.</p>
+      <p>
+        Les photographies publiées sur ce site sont protégées par le droit
+        d'auteur. Toute reproduction, diffusion ou réutilisation, même
+        partielle, est interdite sans autorisation écrite.
+      </p>
+    </div>
+  </div>
+</footer>
+
+<dialog class="menu" id="menu" aria-label="Navigation principale" data-menu>
+  <div class="menu__inner shell">
+    <div class="menu__top">
+      <p class="eyebrow">Navigation</p>
+      <button class="menu__close" type="button" data-menu-close>Fermer</button>
+    </div>
+    <ul class="menu__list">
+      <li><a href="index.html"><span class="menu__num" aria-hidden="true">01</span>Accueil</a></li>
+      <li><a href="portfolio.html"><span class="menu__num" aria-hidden="true">02</span>Portfolio</a></li>
+      <li><a href="evenements.html"><span class="menu__num" aria-hidden="true">03</span>Événements</a></li>
+      <li><a href="a-propos.html"><span class="menu__num" aria-hidden="true">04</span>À propos</a></li>
+      <li><a href="contact.html"><span class="menu__num" aria-hidden="true">05</span>Contact</a></li>
+    </ul>
+    <p class="menu__foot mono">Portraits · Cérémonies · Événements · Reportages</p>
+  </div>
+</dialog>
+
+<script>
+  /* Révèle immédiatement ce qui est déjà dans la fenêtre. Volontairement en
+     ligne et en fin de page : exécuté pendant l'analyse du document, sans
+     requête, donc sans retarder le plus grand rendu de contenu. La
+     révélation au défilement du reste est prise en charge par reveal.js. */
+  for (var noeuds = document.querySelectorAll("[data-reveal]"), i = 0; i < noeuds.length; i++) {
+    if (noeuds[i].getBoundingClientRect().top < window.innerHeight) {
+      noeuds[i].classList.add("is-revealed");
+    }
+  }
+</script>
+<script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

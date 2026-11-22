@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact — Ange Kevin Photographie</title>
+<meta name="description" content="Contacter Ange Kevin Photographie pour une date, un projet de portrait, une cérémonie, un événement ou un reportage.">
+<meta name="theme-color" content="#0a0a0b">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ange Kevin Photographie">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="Contact — Ange Kevin Photographie">
+<meta property="og:description" content="Contacter Ange Kevin Photographie pour une date, un projet de portrait, une cérémonie, un événement ou un reportage.">
+<meta property="og:image" content="assets/img/og-cover.png">
+<meta property="og:image:alt" content="Ange Kevin Photographie">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/site.css">
+<link rel="modulepreload" href="assets/js/main.js">
+<link rel="modulepreload" href="assets/js/nav.js">
+<link rel="modulepreload" href="assets/js/reveal.js">
+<link rel="modulepreload" href="assets/js/albums.js">
+<script>
+  /* Marque la disponibilité de JavaScript, puis déclenche la séquence
+     d'entrée dès la deuxième image. Indépendant des modules : si leur
+     chargement échoue, le contenu s'affiche malgré tout. */
+  var root = document.documentElement;
+  root.className = "js";
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () { root.classList.add("is-ready"); });
+  });
+  /* Filet de sécurité : si le module de révélation n'a pas démarré au bout
+     de trois secondes, les photographies sont affichées sans attendre. */
+  setTimeout(function () {
+    if (!root.dataset.revealReady) root.classList.add("no-reveal");
+  }, 3000);
+</script>
+</head>
+<body>
+
+<div class="progress" aria-hidden="true"></div>
+<a class="skip" href="#contenu">Aller au contenu</a>
+
+<header class="site-header" data-header>
+  <div class="site-header__inner shell">
+    <a class="brand" href="index.html">
+      <img class="brand__mark" src="assets/img/logo.svg" alt="" width="32" height="32">
+      <span class="brand__text">
+        <span>Ange Kevin</span>
+        <span>Photographie</span>
+      </span>
+      <span class="visually-hidden">— retour à l'accueil</span>
+    </a>
+
+    <nav class="nav" aria-label="Navigation principale">
+      <ul class="nav__list">
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="portfolio.html">Portfolio</a></li>
+        <li><a href="evenements.html">Événements</a></li>
+        <li><a href="a-propos.html">À propos</a></li>
+        <li><a href="contact.html" aria-current="page">Contact</a></li>
+      </ul>
+    </nav>
+
+    <button class="nav-toggle" type="button" aria-haspopup="dialog" data-menu-open>
+      <span class="nav-toggle__glyph" aria-hidden="true"><i></i><i></i></span>
+      <span>Menu</span>
+    </button>
+  </div>
+</header>
+<div class="header-sentinel" data-header-sentinel aria-hidden="true"></div>
+
+<main id="contenu">
+
+  <section class="page-head">
+    <div class="page-head__inner shell">
+      <div>
+        <p class="eyebrow" data-intro="1">Contact</p>
+        <h1 data-intro="2">Prendre contact</h1>
+      </div>
+      <p class="lead" data-intro="3">
+        Pour une date, un projet ou une simple question.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="t-canaux">
+    <div class="shell">
+      <div class="section__head">
+        <p class="folio" aria-hidden="true">01</p>
+        <p class="eyebrow">Moyens de contact</p>
+        <h2 class="section__title" id="t-canaux">Où écrire</h2>
+        <p class="section__note">
+          Les coordonnées professionnelles seront publiées ici une fois
+          arrêtées. Aucune n'est inventée en attendant.
+        </p>
+      </div>
+
+      <!-- À COMPLÉTER : remplacer chaque .pending par la coordonnée réelle,
+           sous forme de lien (mailto:, https://…). Supprimer les canaux non
+           utilisés plutôt que de les laisser vides. -->
+      <dl class="channels" data-reveal-group>
+        <div data-reveal="rise">
+          <dt>Courriel</dt>
+          <dd><span class="pending">À renseigner</span></dd>
+        </div>
+        <div data-reveal="rise">
+          <dt>Téléphone</dt>
+          <dd><span class="pending">À renseigner</span></dd>
+        </div>
+        <div data-reveal="rise">
+          <dt>Instagram</dt>
+          <dd><span class="pending">À renseigner</span></dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="t-message">
+    <div class="shell">
+      <div class="section__head">
+        <p class="folio" aria-hidden="true">02</p>
+        <p class="eyebrow">Avant d'écrire</p>
+        <h2 class="section__title" id="t-message">Ce qui aide à répondre vite</h2>
+      </div>
+      <div class="prose" data-reveal="rise">
+        <ul>
+          <li>La date et le lieu, s'ils sont déjà fixés.</li>
+          <li>Le type de prise de vue : portrait, cérémonie, événement, reportage.</li>
+          <li>La durée envisagée et le nombre de personnes attendues.</li>
+        </ul>
+        <p>
+          Ce site est statique : il ne comporte aucun formulaire, n'enregistre
+          aucune donnée personnelle et ne dépose aucun traceur.
+        </p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="site-footer__inner shell">
+    <nav class="site-footer__nav mono" aria-label="Navigation de pied de page">
+      <ul>
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="portfolio.html">Portfolio</a></li>
+        <li><a href="evenements.html">Événements</a></li>
+        <li><a href="a-propos.html">À propos</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="site-footer__legal">
+      <p>© 2026 Ange Kevin Photographie.</p>
+      <p>
+        Les photographies publiées sur ce site sont protégées par le droit
+        d'auteur. Toute reproduction, diffusion ou réutilisation, même
+        partielle, est interdite sans autorisation écrite.
+      </p>
+    </div>
+  </div>
+</footer>
+
+<dialog class="menu" id="menu" aria-label="Navigation principale" data-menu>
+  <div class="menu__inner shell">
+    <div class="menu__top">
+      <p class="eyebrow">Navigation</p>
+      <button class="menu__close" type="button" data-menu-close>Fermer</button>
+    </div>
+    <ul class="menu__list">
+      <li><a href="index.html"><span class="menu__num" aria-hidden="true">01</span>Accueil</a></li>
+      <li><a href="portfolio.html"><span class="menu__num" aria-hidden="true">02</span>Portfolio</a></li>
+      <li><a href="evenements.html"><span class="menu__num" aria-hidden="true">03</span>Événements</a></li>
+      <li><a href="a-propos.html"><span class="menu__num" aria-hidden="true">04</span>À propos</a></li>
+      <li><a href="contact.html" aria-current="page"><span class="menu__num" aria-hidden="true">05</span>Contact</a></li>
+    </ul>
+    <p class="menu__foot mono">Portraits · Cérémonies · Événements · Reportages</p>
+  </div>
+</dialog>
+
+<script>
+  /* Révèle immédiatement ce qui est déjà dans la fenêtre. Volontairement en
+     ligne et en fin de page : exécuté pendant l'analyse du document, sans
+     requête, donc sans retarder le plus grand rendu de contenu. La
+     révélation au défilement du reste est prise en charge par reveal.js. */
+  for (var noeuds = document.querySelectorAll("[data-reveal]"), i = 0; i < noeuds.length; i++) {
+    if (noeuds[i].getBoundingClientRect().top < window.innerHeight) {
+      noeuds[i].classList.add("is-revealed");
+    }
+  }
+</script>
+<script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

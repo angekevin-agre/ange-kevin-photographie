@@ -1,0 +1,15 @@
+# Sorties de tests locaux (captures d'écran, profil Chrome temporaire)
+.captures/
+
+# Systèmes d'exploitation et éditeurs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Node n'est utilisé que pour les scripts de tools/ : aucune dépendance,
+# donc aucun node_modules attendu. La règle reste par prudence.
+node_modules/
+
+# Cache du greffon de relecture de design (outil local)
+.impeccable/

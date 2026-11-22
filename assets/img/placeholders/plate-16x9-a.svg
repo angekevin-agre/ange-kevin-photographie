@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080" aria-hidden="true">
+  <defs>
+    <linearGradient id="t" gradientTransform="rotate(8 .5 .5)">
+      <stop offset="0" stop-color="#2f2c27"/>
+      <stop offset=".55" stop-color="#201e1b"/>
+      <stop offset="1" stop-color="#151413"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#t)"/>
+  <rect x="24" y="24" width="1872" height="1032" fill="none" stroke="#3a372f" stroke-width="2"/>
+  <path d="M48 102V48H102" fill="none" stroke="#4a4639" stroke-width="2"/>
+  <path d="M1872 978V1032H1818" fill="none" stroke="#4a4639" stroke-width="2"/>
+  <rect x="48" y="1002" width="30" height="30" fill="#141417"/><rect x="78" y="1002" width="30" height="30" fill="#232327"/><rect x="108" y="1002" width="30" height="30" fill="#343439"/><rect x="138" y="1002" width="30" height="30" fill="#47474d"/><rect x="168" y="1002" width="30" height="30" fill="#5c5c62"/>
+  <text x="50%" y="540" text-anchor="middle" font-family="ui-monospace, 'Courier New', monospace" font-size="28" letter-spacing="7.840000000000001" fill="#a19b91">EMPLACEMENT</text>
+  <text x="50%" y="601.6" text-anchor="middle" font-family="ui-monospace, 'Courier New', monospace" font-size="28" letter-spacing="7.840000000000001" fill="#a19b91">PHOTOGRAPHIE</text>
+  <text x="1872" y="76" text-anchor="end" font-family="ui-monospace, 'Courier New', monospace" font-size="25.2" letter-spacing="5.6000000000000005" fill="#7d776f">16:9</text>
+</svg>

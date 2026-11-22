@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ange Kevin Photographie — Portraits, cérémonies et reportages</title>
+<meta name="description" content="Portfolio photographique d'Ange Kevin : portraits, cérémonies, événements et reportages. Une sélection d'images retenue après chaque séance.">
+<meta name="theme-color" content="#0a0a0b">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ange Kevin Photographie">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="Ange Kevin Photographie — Portraits, cérémonies et reportages">
+<meta property="og:description" content="Portfolio photographique d'Ange Kevin : portraits, cérémonies, événements et reportages.">
+<meta property="og:image" content="assets/img/og-cover.png">
+<meta property="og:image:alt" content="Ange Kevin Photographie">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/site.css">
+<link rel="modulepreload" href="assets/js/main.js">
+<link rel="modulepreload" href="assets/js/nav.js">
+<link rel="modulepreload" href="assets/js/reveal.js">
+<link rel="modulepreload" href="assets/js/albums.js">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Ange Kevin",
+  "alternateName": "Ange Kevin Photographie",
+  "jobTitle": "Photographe",
+  "knowsAbout": [
+    "Photographie de portrait",
+    "Photographie de cérémonie",
+    "Photographie d'événement",
+    "Reportage photographique"
+  ]
+}
+</script>
+<script>
+  /* Marque la disponibilité de JavaScript, puis déclenche la séquence
+     d'entrée dès la deuxième image. Indépendant des modules : si leur
+     chargement échoue, le contenu s'affiche malgré tout. */
+  var root = document.documentElement;
+  root.className = "js";
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () { root.classList.add("is-ready"); });
+  });
+  /* Filet de sécurité : si le module de révélation n'a pas démarré au bout
+     de trois secondes, les photographies sont affichées sans attendre. */
+  setTimeout(function () {
+    if (!root.dataset.revealReady) root.classList.add("no-reveal");
+  }, 3000);
+</script>
+</head>
+<body>
+
+<div class="progress" aria-hidden="true"></div>
+<a class="skip" href="#contenu">Aller au contenu</a>
+
+<header class="site-header" data-header>
+  <div class="site-header__inner shell">
+    <a class="brand" href="index.html">
+      <img class="brand__mark" src="assets/img/logo.svg" alt="" width="32" height="32">
+      <span class="brand__text">
+        <span>Ange Kevin</span>
+        <span>Photographie</span>
+      </span>
+      <span class="visually-hidden">— retour à l'accueil</span>
+    </a>
+
+    <nav class="nav" aria-label="Navigation principale">
+      <ul class="nav__list">
+        <li><a href="index.html" aria-current="page">Accueil</a></li>
+        <li><a href="portfolio.html">Portfolio</a></li>
+        <li><a href="evenements.html">Événements</a></li>
+        <li><a href="a-propos.html">À propos</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+
+    <button class="nav-toggle" type="button" aria-haspopup="dialog" data-menu-open>
+      <span class="nav-toggle__glyph" aria-hidden="true"><i></i><i></i></span>
+      <span>Menu</span>
+    </button>
+  </div>
+</header>
+<div class="header-sentinel" data-header-sentinel aria-hidden="true"></div>
+
+<main id="contenu">
+
+  <!-- ================================================== Hero photographique -->
+  <section class="hero">
+    <div class="hero__grid shell">
+      <div class="hero__text">
+        <h1 class="hero__title">
+          <span data-intro="1">Ange Kevin</span>
+          <span class="is-italic" data-intro="2">Photographie</span>
+        </h1>
+        <p class="lead" data-intro="3">
+          Portraits, cérémonies, événements et reportages.
+          Une sélection resserrée, retenue après chaque séance.
+        </p>
+        <a class="cue" href="#selection" data-intro="4">
+          Voir la sélection
+          <span class="cue__rule" aria-hidden="true"></span>
+        </a>
+      </div>
+
+      <figure class="hero__plate plate">
+        <span class="plate__frame" data-develop>
+          <img src="assets/img/placeholders/plate-4x5-a.svg" width="1440" height="1800"
+               alt="" fetchpriority="high">
+        </span>
+        <figcaption class="plate__caption mono">
+          <b>Emplacement réservé</b>
+          <span class="plate__ref">A/01 · 4:5</span>
+        </figcaption>
+      </figure>
+    </div>
+
+    <div class="hero__foot shell">
+      <hr class="rule" data-draw>
+      <p class="hero__meta mono">
+        <span>Portfolio photographique</span>
+        <span>Sélection en cours de constitution</span>
+      </p>
+    </div>
+  </section>
+
+  <!-- ================================================ 01 — Sélection -->
+  <section class="section" id="selection" aria-labelledby="titre-selection">
+    <div class="shell">
+      <div class="section__head">
+        <p class="folio" aria-hidden="true">01</p>
+        <p class="eyebrow">Sélection</p>
+        <h2 class="section__title" id="titre-selection">Ce qui reste après le tri</h2>
+        <p class="section__note">
+          Les tirages présentés ici seront choisis parmi les séances les plus récentes.
+          Les emplacements ci-dessous attendent les photographies définitives.
+        </p>
+      </div>
+
+      <!-- Trois compositions distinctes : ouverture, diptyque décalé,
+           triptyque. Le rythme change à chaque bloc, aucune carte répétée. -->
+      <div class="composition composition--lead" data-reveal-group>
+        <figure class="plate" data-reveal="wipe">
+          <span class="plate__frame">
+            <img src="assets/img/placeholders/plate-2x3-a.svg" width="1200" height="1800"
+                 alt="" loading="lazy" decoding="async">
+          </span>
+          <figcaption class="plate__caption mono">
+            <b>Emplacement réservé</b><span class="plate__ref">S/01 · 2:3</span>
+          </figcaption>
+        </figure>
+        <figure class="plate" data-reveal="wipe">
+          <span class="plate__frame">
+            <img src="assets/img/placeholders/plate-3x2-a.svg" width="1800" height="1200"
+                 alt="" loading="lazy" decoding="async">
+          </span>
+          <figcaption class="plate__caption mono">
+            <b>Emplacement réservé</b><span class="plate__ref">S/02 · 3:2</span>
+          </figcaption>
+        </figure>
+        <figure class="plate" data-reveal="wipe">
+          <span class="plate__frame">
+            <img src="assets/img/placeholders/plate-3x2-b.svg" width="1800" height="1200"
+                 alt="" loading="lazy" decoding="async">
+          </span>
+          <figcaption class="plate__caption mono">
+            <b>Emplacement réservé</b><span class="plate__ref">S/03 · 3:2</span>
+          </figcaption>
+        </figure>
+      </div>
+
+      <hr class="rule rule--spaced" data-reveal="draw">
+
+      <div class="composition composition--duo" data-reveal-group>
+        <figure class="plate" data-reveal="rise">
+          <span class="plate__frame">
+            <img src="assets/img/placeholders/plate-4x5-a.svg" width="1440" height="1800"
+                 alt="" loading="lazy" decoding="async">
+          </span>
+          <figcaption class="plate__caption mono">
+            <b>Emplacement réservé</b><span class="plate__ref">S/04 · 4:5</span>
+          </figcaption>
+        </figure>
+        <figure class="plate" data-reveal="rise">
+          <span class="plate__frame">
+            <img src="assets/img/placeholders/plate-2x3-b.svg" width="1200" height="1800"
+                 alt="" loading="lazy" decoding="async">
+          </span>
+          <figcaption class="plate__caption mono">
+            <b>Emplacement réservé</b><span class="plate__ref">S/05 · 2:3</span>
+          </figcaption>
+        </figure>
+      </div>
+
+      <hr class="rule rule--spaced" data-reveal="draw">
+
+      <div class="composition composition--trio" data-reveal-group>
+        <figure class="plate" data-reveal="wipe">
+          <span class="plate__frame">
+            <img src="assets/img/placeholders/plate-16x9-a.svg" width="1920" height="1080"
+                 alt="" loading="lazy" decoding="async">
+          </span>
+          <figcaption class="plate__caption mono">
+            <b>Emplacement réservé</b><span class="plate__ref">S/06 · 16:9</span>
+          </figcaption>
+        </figure>
+        <figure class="plate" data-reveal="wipe">
+          <span class="plate__frame">
+            <img src="assets/img/placeholders/plate-1x1-a.svg" width="1400" height="1400"
+                 alt="" loading="lazy" decoding="async">
+          </span>
+          <figcaption class="plate__caption mono">
+            <b>Emplacement réservé</b><span class="plate__ref">S/07 · 1:1</span>
+          </figcaption>
+        </figure>
+      </div>
+
+      <p class="section__more">
+        <a class="link" href="portfolio.html">Voir le portfolio complet</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ================================================ 02 — Derniers événements -->
+  <section class="section" id="evenements" aria-labelledby="titre-evenements">
+    <div class="shell">
+      <div class="section__head">
+        <p class="folio" aria-hidden="true">02</p>
+        <p class="eyebrow">Événements</p>
+        <h2 class="section__title" id="titre-evenements">Derniers événements couverts</h2>
+        <p class="section__note">
+          Chaque événement donnera lieu à un album : titre, date, catégorie,
+          photographie de couverture et sélection d'images.
+        </p>
+      </div>
+
+      <!-- Rendu depuis assets/data/events.json, le plus récent d'abord.
+           Tant qu'aucun album n'y figure, l'état d'attente ci-dessous reste
+           affiché : aucun événement fictif n'est présenté. -->
+      <!-- « sizes » suit la largeur réelle d'une vignette de la bande :
+           min(78vw, 24rem) en mobile et tablette, 26rem à partir de 64em
+           (voir « .strip » dans site.css). 78vw atteint 24rem à 492px, soit
+           30,75em : au-delà, la largeur est fixe. -->
+      <div class="strip" data-albums data-limit="3"
+           data-sizes="(min-width: 64em) 26rem, (max-width: 30.75em) 78vw, 24rem" hidden></div>
+
+      <!-- Compte rendu de chargement (voir assets/js/albums.js) : fichier
+           injoignable, données invalides, albums ignorés. Reste masqué dans le
+           cas normal, y compris lorsque la liste est simplement vide. -->
+      <p class="albums-status" data-albums-status role="status" hidden></p>
+
+      <div data-albums-empty>
+        <!-- La bande se révèle d'un bloc : animer chaque vignette laisserait
+             invisibles celles qui sont hors écran horizontalement, puisqu'un
+             IntersectionObserver ne les verrait jamais au défilement vertical. -->
+        <div class="strip" tabindex="0" role="group"
+             aria-label="Emplacements d'albums, défilement horizontal" data-reveal="rise">
+          <figure class="plate">
+            <span class="plate__frame">
+              <img src="assets/img/placeholders/plate-3x2-a.svg" width="1800" height="1200"
+                   alt="" loading="lazy" decoding="async">
+            </span>
+            <figcaption class="plate__caption mono">
+              <b>Album à venir</b><span class="plate__ref">E/01</span>
+            </figcaption>
+          </figure>
+          <figure class="plate">
+            <span class="plate__frame">
+              <img src="assets/img/placeholders/plate-5x4-a.svg" width="1800" height="1440"
+                   alt="" loading="lazy" decoding="async">
+            </span>
+            <figcaption class="plate__caption mono">
+              <b>Album à venir</b><span class="plate__ref">E/02</span>
+            </figcaption>
+          </figure>
+          <figure class="plate">
+            <span class="plate__frame">
+              <img src="assets/img/placeholders/plate-3x2-b.svg" width="1800" height="1200"
+                   alt="" loading="lazy" decoding="async">
+            </span>
+            <figcaption class="plate__caption mono">
+              <b>Album à venir</b><span class="plate__ref">E/03</span>
+            </figcaption>
+          </figure>
+        </div>
+        <p class="strip__hint mono">
+          Aucun album publié pour l'instant — <a class="link" href="evenements.html">voir la page Événements</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================ 03 — Présentation -->
+  <section class="section" id="presentation" aria-labelledby="titre-presentation">
+    <div class="shell">
+      <div class="section__head">
+        <p class="folio" aria-hidden="true">03</p>
+        <p class="eyebrow">Présentation</p>
+        <h2 class="section__title" id="titre-presentation">Photographier, puis choisir</h2>
+      </div>
+
+      <div class="composition composition--spread">
+        <figure class="plate offset-left" data-reveal="wipe">
+          <span class="plate__frame">
+            <img src="assets/img/placeholders/plate-5x4-a.svg" width="1800" height="1440"
+                 alt="" loading="lazy" decoding="async">
+          </span>
+          <figcaption class="plate__caption mono">
+            <b>Emplacement réservé</b><span class="plate__ref">P/01 · 5:4</span>
+          </figcaption>
+        </figure>
+        <div class="prose" data-reveal="rise">
+          <p>
+            Quatre terrains : le portrait, la cérémonie, l'événement et le
+            reportage. Après chaque séance vient le tri — ne garder que les
+            images qui tiennent seules.
+          </p>
+          <p>
+            <a class="link" href="a-propos.html">Lire la page À propos</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================ 04 — Contact -->
+  <section class="section" id="contact" aria-labelledby="titre-contact">
+    <div class="shell invite">
+      <div>
+        <p class="folio" aria-hidden="true">04</p>
+        <h2 class="invite__title" id="titre-contact">Pour une date, un projet ou une question</h2>
+      </div>
+      <p><a class="link" href="contact.html">Voir les moyens de contact</a></p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="site-footer__inner shell">
+    <nav class="site-footer__nav mono" aria-label="Navigation de pied de page">
+      <ul>
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="portfolio.html">Portfolio</a></li>
+        <li><a href="evenements.html">Événements</a></li>
+        <li><a href="a-propos.html">À propos</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="site-footer__legal">
+      <p>© 2026 Ange Kevin Photographie.</p>
+      <p>
+        Les photographies publiées sur ce site sont protégées par le droit
+        d'auteur. Toute reproduction, diffusion ou réutilisation, même
+        partielle, est interdite sans autorisation écrite.
+      </p>
+    </div>
+  </div>
+</footer>
+
+<dialog class="menu" id="menu" aria-label="Navigation principale" data-menu>
+  <div class="menu__inner shell">
+    <div class="menu__top">
+      <p class="eyebrow">Navigation</p>
+      <button class="menu__close" type="button" data-menu-close>Fermer</button>
+    </div>
+    <ul class="menu__list">
+      <li><a href="index.html" aria-current="page"><span class="menu__num" aria-hidden="true">01</span>Accueil</a></li>
+      <li><a href="portfolio.html"><span class="menu__num" aria-hidden="true">02</span>Portfolio</a></li>
+      <li><a href="evenements.html"><span class="menu__num" aria-hidden="true">03</span>Événements</a></li>
+      <li><a href="a-propos.html"><span class="menu__num" aria-hidden="true">04</span>À propos</a></li>
+      <li><a href="contact.html"><span class="menu__num" aria-hidden="true">05</span>Contact</a></li>
+    </ul>
+    <p class="menu__foot mono">Portraits · Cérémonies · Événements · Reportages</p>
+  </div>
+</dialog>
+
+<script>
+  /* Révèle immédiatement ce qui est déjà dans la fenêtre. Volontairement en
+     ligne et en fin de page : exécuté pendant l'analyse du document, sans
+     requête, donc sans retarder le plus grand rendu de contenu. La
+     révélation au défilement du reste est prise en charge par reveal.js. */
+  for (var noeuds = document.querySelectorAll("[data-reveal]"), i = 0; i < noeuds.length; i++) {
+    if (noeuds[i].getBoundingClientRect().top < window.innerHeight) {
+      noeuds[i].classList.add("is-revealed");
+    }
+  }
+</script>
+<script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

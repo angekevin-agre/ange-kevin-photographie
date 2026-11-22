@@ -1,0 +1,91 @@
+/* ==========================================================================
+   Design system — « Chambre Claire »
+   Source unique de vérité : couleurs, typographie, espacements, mouvement.
+   Toute modification d'identité visuelle se fait ici.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* --- Couleur : surfaces (encre) ------------------------------------- */
+  --c-bg:          #0a0a0b;   /* fond de page                             */
+  --c-bg-plate:    #151518;   /* fond des emplacements photographiques    */
+  --c-line:        #26241f;   /* filet (rebord de film)                   */
+  --c-line-strong: #3b3830;   /* filet appuyé                             */
+
+  /* --- Couleur : texte (papier) --------------------------------------- */
+  --c-text:   #f2efe8;  /* 16,4:1 sur --c-bg                              */
+  --c-text-2: #b2ada3;  /*  8,3:1 sur --c-bg                              */
+  --c-text-3: #8b867e;  /*  5,4:1 sur --c-bg — seuil AA respecté          */
+
+  /* --- Couleur : accent (lumière inactinique) -------------------------- */
+  --c-accent:      #c06a33;  /* filets, marqueurs, aplats — non textuels  */
+  --c-accent-text: #dd9159;  /*  7,7:1 sur --c-bg — usage textuel         */
+  --c-focus:       #f2efe8;
+
+  /* --- Typographie : familles ------------------------------------------
+     Aucune requête réseau : piles système choisies pour leur dessin.
+     Pour passer à une police auto-hébergée, remplacer --ff-display et
+     ajouter la règle @font-face dans base.css (voir README).             */
+  --ff-display: "Iowan Old Style", "Palatino Linotype", Palatino,
+                "Book Antiqua", "URW Palladio L", Georgia, serif;
+  --ff-text:    "Segoe UI Variable Text", "Segoe UI", -apple-system,
+                BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --ff-mono:    ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono",
+                Consolas, "Liberation Mono", monospace;
+
+  /* --- Typographie : échelle fluide ------------------------------------ */
+  --fs-micro:   0.75rem;                                   /* 12px        */
+  --fs-small:   0.875rem;                                  /* 14px        */
+  --fs-body:    clamp(1rem, 0.97rem + 0.15vw, 1.0625rem);
+  --fs-lead:    clamp(1.125rem, 1.04rem + 0.45vw, 1.375rem);
+  --fs-h3:      clamp(1.1875rem, 1.1rem + 0.5vw, 1.5rem);
+  --fs-h2:      clamp(1.75rem, 1.4rem + 1.6vw, 2.75rem);
+  --fs-h1:      clamp(2.25rem, 1.6rem + 3.4vw, 4.5rem);
+  /* Calibré pour que « Ange Kevin » tienne sur une ligne de 320 px à 1920 px,
+     sans jamais élargir sa colonne de grille. */
+  --fs-display: clamp(2.5rem, 0.85rem + 7vw, 7rem);
+  --fs-folio:   clamp(3rem, 2rem + 5vw, 7rem);
+
+  --lh-tight:   0.88;
+  --lh-snug:    1.12;
+  --lh-body:    1.6;
+  --ls-display: -0.03em;
+  --ls-mono:    0.16em;
+
+  /* --- Espacements (géométriques) -------------------------------------- */
+  --s-1: 0.25rem; --s-2: 0.5rem;  --s-3: 0.75rem; --s-4: 1rem;
+  --s-5: 1.5rem;  --s-6: 2rem;    --s-7: 3rem;    --s-8: 4rem;
+  --s-9: 6rem;    --s-10: 8rem;   --s-11: 12rem;
+  --space-section: clamp(4.5rem, 10vw, 11rem);
+
+  /* --- Composition ----------------------------------------------------- */
+  --gutter:  clamp(1.25rem, 5vw, 4.5rem);
+  --measure: 62ch;
+  --shell-max: 100rem;
+  --header-h: 4.25rem;
+
+  /* --- Traits ----------------------------------------------------------
+     Parti pris éditorial : aucun arrondi nulle part, le filet porte seul
+     la structure. Il n'existe donc pas de jeton de rayon.               */
+  --bw: 1px;
+
+  /* --- Mouvement : « révélation » -------------------------------------- */
+  --dur-1: 180ms;   /* micro-interaction            */
+  --dur-2: 420ms;   /* état d'interface             */
+  --dur-3: 680ms;   /* révélation d'image           */
+  --dur-4: 1100ms;  /* séquence d'entrée            */
+  --stagger: 90ms;
+  --ease-print: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-draw:  cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* --- Empilement ------------------------------------------------------
+     Le menu mobile n'y figure pas : <dialog> en mode modal est promu dans
+     la couche supérieure du navigateur, au-dessus de tout z-index.      */
+  --z-header: 50;
+  --z-skip: 200;
+}
+
+@media (min-width: 64em) {
+  :root { --header-h: 5.25rem; }
+}

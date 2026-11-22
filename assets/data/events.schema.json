@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ange-kevin-photographie/events.schema.json",
+  "title": "Événements photographiés",
+  "description": "Source unique des albums. L'accueil et la page Événements lisent ce fichier : publier une sélection ne demande d'éditer aucune page HTML.",
+  "type": "object",
+  "required": ["albums"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "updated": {
+      "type": "string",
+      "format": "date",
+      "description": "Date de dernière mise à jour du fichier (AAAA-MM-JJ)."
+    },
+    "albums": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/album" }
+    }
+  },
+  "$defs": {
+    "album": {
+      "type": "object",
+      "required": ["id", "title", "date", "category", "cover"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "description": "Identifiant stable, en minuscules et tirets. Sert d'ancre et de futur segment d'URL. Ne jamais le modifier après publication."
+        },
+        "title": { "type": "string", "minLength": 2 },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date de l'événement (AAAA-MM-JJ). Sert au tri, du plus récent au plus ancien."
+        },
+        "category": {
+          "enum": ["portraits", "evenements", "ceremonies", "reportages", "autres"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Facultatif. Une à deux phrases, affichées sous la couverture."
+        },
+        "url": {
+          "type": "string",
+          "description": "Facultatif. Page de détail de l'album, à introduire en PHOTO-02. Absente, la couverture n'est pas cliquable."
+        },
+        "cover": { "$ref": "#/$defs/photo" },
+        "photos": {
+          "type": "array",
+          "description": "Photographies de l'album. Non affichées en PHOTO-01 : seul leur nombre est repris sous la couverture. La galerie et la visionneuse relèvent de PHOTO-02.",
+          "items": { "$ref": "#/$defs/photo" }
+        }
+      }
+    },
+    "photo": {
+      "type": "object",
+      "required": ["src", "width", "height", "alt"],
+      "additionalProperties": false,
+      "properties": {
+        "src": {
+          "type": "string",
+          "description": "Chemin relatif depuis la racine du site, par exemple assets/img/evenements/<id>/01.webp. Jamais de chemin absolu : le site est servi depuis un sous-répertoire sur GitHub Pages."
+        },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "alt": {
+          "type": "string",
+          "description": "Texte alternatif décrivant la photographie. Chaîne vide admise pour une image purement décorative."
+        },
+        "caption": { "type": "string", "description": "Légende facultative." },
+        "variants": {
+          "type": "array",
+          "description": "Déclinaisons de largeur alimentant srcset. La plus large doit correspondre à src.",
+          "items": {
+            "type": "object",
+            "required": ["src", "width"],
+            "additionalProperties": false,
+            "properties": {
+              "src": { "type": "string" },
+              "width": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      }
+    }
+  }
+}
