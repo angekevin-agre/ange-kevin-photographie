@@ -1,13 +1,17 @@
 /**
  * Captures d'écran et relevé de console, via le protocole DevTools de Chrome.
  *
- *   python -m http.server 8123 --bind 127.0.0.1     (dans un autre terminal)
  *   node tools/capture.mjs
  *
+ * Le serveur de test est lancé par ce script (« tools/serve.mjs »), avec le
+ * sous-chemin de publication de GitHub Pages : les captures montrent donc le
+ * site tel qu'il sera servi, page 404 comprise.
+ *
  * Options :
- *   --base=http://127.0.0.1:8123   racine du serveur local
+ *   --base=<url>                   serveur déjà lancé, à utiliser à la place
  *   --out=.captures                répertoire de sortie (ignoré par Git)
  *   --port=9222                    port de débogage
+ *   --http=8130                    port du serveur statique lancé ici
  *
  * Pourquoi le protocole DevTools plutôt que « chrome --screenshot » : sous
  * Windows, Chrome impose une largeur de fenêtre minimale d'environ 500 px.
@@ -24,12 +28,23 @@ import { mkdir, writeFile, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
+import { lancerServeur } from "./serve.mjs";
+
 const arg = (name, fallback) =>
   process.argv.find((a) => a.startsWith(`--${name}=`))?.split("=").slice(1).join("=") ?? fallback;
 
-const BASE = arg("base", "http://127.0.0.1:8123");
 const OUT = arg("out", ".captures");
 const PORT = Number(arg("port", "9222"));
+const PORT_HTTP = Number(arg("http", "8130"));
+
+/** Sous-chemin de publication émulé, comme dans tools/check.mjs. */
+const SOUS_CHEMIN = "/ange-kevin-photographie";
+
+const BASE_EXTERNE = arg("base", "");
+const serveur = BASE_EXTERNE
+  ? null
+  : (await lancerServeur({ port: PORT_HTTP, prefix: SOUS_CHEMIN })).serveur;
+const BASE = BASE_EXTERNE || `http://127.0.0.1:${PORT_HTTP}${SOUS_CHEMIN}`;
 
 const PAGES = ["index.html", "portfolio.html", "evenements.html", "a-propos.html", "contact.html", "404.html"];
 
@@ -208,6 +223,7 @@ try {
 } finally {
   socket?.close();
   browser.kill();
+  serveur?.close();
 }
 
 console.log(problems.length ? `\n${problems.length} anomalie(s) :\n- ${problems.join("\n- ")}` : "\nAucune erreur console, aucun débordement.");

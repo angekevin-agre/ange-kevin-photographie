@@ -1,8 +1,10 @@
 /**
  * Mesure des indicateurs de performance, dans des conditions explicites.
  *
- *   python -m http.server 8123 --bind 127.0.0.1     (dans un autre terminal)
  *   node tools/metrics.mjs
+ *
+ * Le serveur de test est lancé par ce script (« tools/serve.mjs »), avec le
+ * sous-chemin de publication de GitHub Pages.
  *
  * Conditions appliquées, alignées sur le profil mobile usuel :
  *   - viewport 390 × 844, émulation mobile ;
@@ -25,8 +27,19 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
-const BASE = process.argv.find((a) => a.startsWith("--base="))?.slice(7) ?? "http://127.0.0.1:8123";
+import { lancerServeur } from "./serve.mjs";
+
 const PORT = 9355;
+const PORT_HTTP = 8132;
+
+/** Sous-chemin de publication émulé, comme dans tools/check.mjs. */
+const SOUS_CHEMIN = "/ange-kevin-photographie";
+
+const BASE_EXTERNE = process.argv.find((a) => a.startsWith("--base="))?.slice(7);
+const serveur = BASE_EXTERNE
+  ? null
+  : (await lancerServeur({ port: PORT_HTTP, prefix: SOUS_CHEMIN })).serveur;
+const BASE = BASE_EXTERNE ?? `http://127.0.0.1:${PORT_HTTP}${SOUS_CHEMIN}`;
 const PAGES = ["index.html", "portfolio.html", "evenements.html", "a-propos.html", "contact.html"];
 
 const CHROME = [
@@ -157,6 +170,7 @@ try {
 } finally {
   socket?.close();
   browser.kill();
+  serveur?.close();
   await rm(profile, { recursive: true, force: true }).catch(() => {});
 }
 
@@ -176,7 +190,10 @@ console.log(`LCP le plus élevé : ${pireLcp} ms (cible ≤ 2500 ms) — ${pireL
 console.log(`CLS le plus élevé : ${pireCls} (cible ≤ 0,1) — ${pireCls <= 0.1 ? "atteinte" : "NON atteinte"}`);
 console.log("INP non mesuré : il requiert des interactions réelles d'utilisateurs.");
 console.log(
-  "\nLe serveur de test (python -m http.server) répond en HTTP/1.1 sans\n" +
-  "multiplexage : les requêtes se suivent au lieu de se superposer. Le LCP\n" +
-  "mesuré est donc pessimiste par rapport à GitHub Pages, servi en HTTP/2."
+  "\nLe serveur de test (tools/serve.mjs) répond en HTTP/1.1 en clair, sans\n" +
+  "multiplexage ni compression, depuis la machine locale. GitHub Pages sert\n" +
+  "le site en HTTP/2 sur TLS, avec compression, mais depuis un CDN distant.\n" +
+  "Les deux profils diffèrent en sens contraires : ces chiffres servent à\n" +
+  "comparer les pages entre elles et à détecter une régression, pas à\n" +
+  "prédire le terrain."
 );
