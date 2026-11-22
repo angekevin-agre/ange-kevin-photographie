@@ -241,8 +241,17 @@
       <!-- Rendu depuis assets/data/events.json, le plus récent d'abord.
            Tant qu'aucun album n'y figure, l'état d'attente ci-dessous reste
            affiché : aucun événement fictif n'est présenté. -->
+      <!-- « sizes » suit la largeur réelle d'une vignette de la bande :
+           min(78vw, 24rem) en mobile et tablette, 26rem à partir de 64em
+           (voir « .strip » dans site.css). 78vw atteint 24rem à 492px, soit
+           30,75em : au-delà, la largeur est fixe. -->
       <div class="strip" data-albums data-limit="3"
-           data-sizes="(min-width: 64em) 26rem, 78vw" hidden></div>
+           data-sizes="(min-width: 64em) 26rem, (max-width: 30.75em) 78vw, 24rem" hidden></div>
+
+      <!-- Compte rendu de chargement (voir assets/js/albums.js) : fichier
+           injoignable, données invalides, albums ignorés. Reste masqué dans le
+           cas normal, y compris lorsque la liste est simplement vide. -->
+      <p class="albums-status" data-albums-status role="status" hidden></p>
 
       <div data-albums-empty>
         <!-- La bande se révèle d'un bloc : animer chaque vignette laisserait

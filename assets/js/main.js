@@ -16,7 +16,8 @@ initRail();
 initReveal();
 
 // Les albums arrivent après le premier rendu : on leur applique la même
-// révélation une fois insérés.
-initAlbums().then((mount) => {
+// révélation une fois insérés. Les autres états — liste vide, données
+// invalides, fichier injoignable — sont annoncés par le module lui-même.
+initAlbums().then(({ mount }) => {
   if (mount) initReveal(mount);
 });

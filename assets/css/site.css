@@ -55,7 +55,12 @@
 .brand__text span:last-child { color: var(--c-text-3); }
 .brand:hover .brand__text span:last-child { color: var(--c-accent-text); }
 
-.nav { display: none; }
+/* Amélioration progressive : la rangée de liens est l'état par défaut, y
+   compris en mobile. L'interface dépendante de JavaScript (bouton + <dialog>)
+   ne prend le relais qu'une fois le menu réellement initialisé — « html.js-menu »
+   est posée par nav.js, après vérification du balisage et de <dialog>. Si les
+   modules sont bloqués, la navigation reste donc atteignable. */
+.nav { display: block; }
 .nav__list {
   display: flex;
   gap: clamp(var(--s-4), 2.2vw, var(--s-6));
@@ -99,7 +104,7 @@
   border: 0;
   color: var(--c-text);
   cursor: pointer;
-  display: flex;
+  display: none;
   font-family: var(--ff-mono);
   font-size: var(--fs-micro);
   gap: var(--s-3);
@@ -118,24 +123,23 @@
 .nav-toggle:hover .nav-toggle__glyph i:first-child { transform: translateX(25%); }
 .nav-toggle:hover .nav-toggle__glyph i:last-child { transform: translateX(-25%); }
 
-/* Repli sans JavaScript, ou sans prise en charge de <dialog> : la navigation
-   redevient une rangée lisible et défilable, le bouton de menu disparaît. */
-html:not(.js) .nav,
-html.no-dialog .nav { display: block; }
-html:not(.js) .nav-toggle,
-html.no-dialog .nav-toggle { display: none; }
 @media (max-width: 63.999em) {
-  html:not(.js) .nav__list,
-  html.no-dialog .nav__list {
+  /* Rangée de repli : la marque occupe la première ligne, les liens la
+     seconde. Les deux ne se disputent plus la largeur, ce qui supprime le
+     chevauchement observé à 320 et 390 px. */
+  .site-header__inner { flex-wrap: wrap; row-gap: var(--s-1); }
+  .nav { flex: 1 0 100%; }
+  .nav__list {
     overflow-x: auto;
     padding-block: var(--s-2);
     scrollbar-width: none;
   }
-}
+  .nav__list::-webkit-scrollbar { display: none; }
 
-@media (min-width: 64em) {
-  .nav { display: block; }
-  .nav-toggle { display: none; }
+  /* Menu initialisé : la rangée cède la place au bouton. */
+  html.js-menu .site-header__inner { flex-wrap: nowrap; row-gap: 0; }
+  html.js-menu .nav { display: none; }
+  html.js-menu .nav-toggle { display: flex; }
 }
 
 /* ------------------------------------------------------------ 2. MENU MOBILE */
@@ -352,8 +356,16 @@ html:has(.menu[open]) { overflow: hidden; }
 }
 
 /* Albums : seule grille réellement répétitive du site, parce qu'un album est
-   une unité comparable. Le rythme éditorial est porté par les autres blocs. */
-.composition--albums { grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); }
+   une unité comparable. Le rythme éditorial est porté par les autres blocs.
+
+   « auto-fill » et non « auto-fit » : avec auto-fit, les pistes vides sont
+   supprimées et deux albums seuls s'étiraient jusqu'à 612 px sur grand écran.
+   La largeur de rendu dépendait alors du nombre d'albums publiés — impossible
+   à déclarer dans « sizes », donc couverture systématiquement sous-déclarée
+   (voir evenements.html). Avec auto-fill, le nombre de colonnes ne dépend que
+   de la place disponible, et la grille garde son pas quel que soit le nombre
+   d'albums. */
+.composition--albums { grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); }
 
 @media (min-width: 64em) {
   .composition--duo > :nth-child(1) { margin-right: var(--s-7); }
@@ -566,6 +578,18 @@ html:has(.rail) { scroll-padding-top: calc(var(--header-h) + 4.5rem); }
 /* État d'attente des albums : les blocs qui le composent respirent. */
 [data-albums-empty] > * + * { margin-top: clamp(var(--s-5), 4vw, var(--s-7)); }
 
+/* Compte rendu de chargement des albums (voir assets/js/albums.js) : fichier
+   injoignable, données invalides, albums ignorés. Distinct de « .pending »,
+   qui marque un contenu non encore fourni et non une anomalie. */
+.albums-status {
+  border-left: 2px solid var(--c-accent);
+  color: var(--c-text-2);
+  font-size: var(--fs-small);
+  margin-top: var(--s-5);
+  max-width: 48ch;
+  padding-left: var(--s-4);
+}
+
 /* Album rendu depuis events.json (voir assets/js/albums.js). */
 .album__title { margin-top: var(--s-4); }
 .album__desc { color: var(--c-text-2); margin-top: var(--s-3); max-width: 42ch; }
@@ -619,19 +643,22 @@ html.js.is-ready [data-develop] {
   to   { clip-path: inset(0 0 0 0); filter: none; transform: none; }
 }
 
-/* Révélation au défilement, pilotée par IntersectionObserver. */
-[data-reveal] {
+/* Révélation au défilement, pilotée par IntersectionObserver.
+   L'état masqué est entièrement conditionné à « html.js » : sans JavaScript,
+   aucune de ces propriétés n'est appliquée. Rétablir la seule opacité ne
+   suffisait pas — « wipe » rogne l'image par clip-path et la décale par
+   transform, ce qui amputait couvertures et légendes. */
+html.js [data-reveal] {
   opacity: 0;
   transition: opacity var(--dur-3) var(--ease-print),
               transform var(--dur-3) var(--ease-print),
               clip-path var(--dur-3) var(--ease-draw);
 }
-html:not(.js) [data-reveal] { opacity: 1; }
-[data-reveal="rise"] { transform: translateY(1.5rem); }
-[data-reveal="wipe"] { clip-path: inset(0 0 24% 0); transform: translateY(0.75rem); }
+html.js [data-reveal="rise"] { transform: translateY(1.5rem); }
+html.js [data-reveal="wipe"] { clip-path: inset(0 0 24% 0); transform: translateY(0.75rem); }
 /* Filet qui se trace à l'approche, prolongement du geste d'ouverture. */
-[data-reveal="draw"] { opacity: 1; transform: scaleX(0); transform-origin: left; }
-[data-reveal].is-revealed { clip-path: inset(0 0 0 0); opacity: 1; transform: none; }
+html.js [data-reveal="draw"] { opacity: 1; transform: scaleX(0); transform-origin: left; }
+html.js [data-reveal].is-revealed { clip-path: none; opacity: 1; transform: none; }
 
 /* Filet de sécurité : si le module de révélation n'a pas démarré (voir le
    script en ligne de chaque page), plus rien ne reste masqué. */
@@ -680,7 +707,7 @@ html.no-reveal [data-reveal] { clip-path: none; opacity: 1; transform: none; }
     scroll-behavior: auto !important;
   }
   html.js [data-intro],
-  [data-reveal] { opacity: 1 !important; transform: none !important; clip-path: none !important; }
+  html.js [data-reveal] { opacity: 1 !important; transform: none !important; clip-path: none !important; }
   html.js [data-draw] { transform: none !important; }
   html.js.is-ready [data-develop] { animation: none !important; }
   .plate:hover .plate__frame img { transform: none; filter: none; }

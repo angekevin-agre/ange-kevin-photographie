@@ -3,6 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Base de résolution des chemins relatifs.
+     GitHub Pages sert cette page pour toute URL inexistante en conservant
+     l'adresse demandée : « /<dépôt>/albums/2026/ete » par exemple. Les chemins
+     relatifs se résoudraient alors depuis « /<dépôt>/albums/2026/ », et styles,
+     scripts, logo et liens de navigation échoueraient tous.
+
+     La base est donc écrite en dur — sous-chemin de publication du dépôt — afin
+     que la page fonctionne même sans JavaScript, cas réel du déploiement. Le
+     script qui suit la ramène à la racine lorsque le site n'est pas servi sous
+     ce sous-chemin (serveur local, domaine propre). Un seul endroit à modifier
+     si le dépôt est renommé. -->
+<base href="/ange-kevin-photographie/">
+<script>
+  (function () {
+    var base = document.querySelector("base");
+    var sousChemin = base.getAttribute("href");
+    if (window.location.pathname.indexOf(sousChemin) !== 0) base.setAttribute("href", "/");
+  })();
+</script>
+
 <title>Page introuvable — Ange Kevin Photographie</title>
 <meta name="description" content="La page demandée n'existe pas sur le site d'Ange Kevin Photographie. Revenir à l'accueil pour retrouver le portfolio et les événements.">
 <meta name="theme-color" content="#0a0a0b">
@@ -136,6 +157,15 @@
     if (noeuds[i].getBoundingClientRect().top < window.innerHeight) {
       noeuds[i].classList.add("is-revealed");
     }
+  }
+</script>
+<script>
+  /* Un <base> fait résoudre « #contenu » contre la base, et non contre l'URL
+     courante : le lien d'évitement quitterait la page. On le réancre donc sur
+     l'adresse réellement demandée. Sans JavaScript il mènerait à l'accueil :
+     dégradation acceptée, le contenu restant atteignable. */
+  for (var ancres = document.querySelectorAll('a[href^="#"]'), i = 0; i < ancres.length; i++) {
+    ancres[i].setAttribute("href", location.pathname + location.search + ancres[i].getAttribute("href"));
   }
 </script>
 <script type="module" src="assets/js/main.js"></script>

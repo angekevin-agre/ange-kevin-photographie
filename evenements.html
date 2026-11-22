@@ -100,8 +100,25 @@
 
       <!-- Rendu depuis assets/data/events.json (voir assets/js/albums.js).
            Reste vide et masqué tant qu'aucun album n'y figure. -->
+      <!-- « sizes » suit la largeur réellement occupée par une couverture.
+           « .composition--albums » est une grille auto-fill de pistes d'au
+           moins 19rem, dans un « .shell » dont les marges valent
+           clamp(1.25rem, 5vw, 4.5rem) et la gouttière clamp(1.5rem, 4vw, 4rem).
+           Une colonne supplémentaire entre vers 707, 1112 et 1546 px ; les
+           seuils déclarés sont posés une vingtaine de pixels plus haut, car la
+           largeur réellement disponible dépend aussi de la barre de défilement.
+           Déclarer tardivement fait, au pire, servir une déclinaison un peu
+           trop grande ; déclarer trop tôt en servirait une trop petite, donc
+           floue — c'était le défaut de l'ancienne valeur, 32vw dès 48em, qui
+           sous-déclarait la couverture de près de moitié sur deux colonnes. -->
       <div class="composition composition--albums" data-albums
-           data-sizes="(min-width: 48em) 32vw, 90vw" hidden></div>
+           data-sizes="(min-width: 99em) 23rem, (min-width: 71.25em) 28vw, (min-width: 45.3em) 45vw, 90vw"
+           hidden></div>
+
+      <!-- Compte rendu de chargement (voir assets/js/albums.js) : fichier
+           injoignable, données invalides, albums ignorés. Reste masqué dans le
+           cas normal, y compris lorsque la liste est simplement vide. -->
+      <p class="albums-status" data-albums-status role="status" hidden></p>
 
       <!-- État d'attente. Aucun événement fictif n'est présenté : les
            emplacements sont explicitement identifiés comme tels. -->

@@ -21,21 +21,34 @@ export function initHeader() {
 /**
  * Menu mobile bâti sur <dialog> en mode modal : piégeage du focus, fermeture
  * par Échap, arrière-plan rendu inerte et annonce de rôle sont pris en charge
- * par le navigateur. Si <dialog> n'est pas disponible, la page retombe sur la
- * navigation en ligne (voir site.css, « html.no-dialog »).
+ * par le navigateur.
+ *
+ * Amélioration progressive : la rangée de liens de l'entête est l'état par
+ * défaut du balisage et de la feuille de style. Ce n'est qu'une fois le menu
+ * entièrement câblé que « html.js-menu » est posée, laissant alors le bouton
+ * remplacer la rangée en mobile (voir site.css, section 1). Si ce module n'est
+ * pas chargé, ou si <dialog> n'est pas pris en charge, la classe n'est jamais
+ * posée et la navigation reste atteignable.
  */
 export function initMenu() {
   const dialog = document.querySelector("[data-menu]");
   const trigger = document.querySelector("[data-menu-open]");
   if (!dialog || !trigger) return;
 
-  if (typeof dialog.showModal !== "function") {
-    document.documentElement.classList.add("no-dialog");
-    return;
-  }
+  // <dialog> non pris en charge : la rangée de repli reste en place.
+  if (typeof dialog.showModal !== "function") return;
 
-  trigger.addEventListener("click", () => dialog.showModal());
-  dialog.addEventListener("close", () => trigger.focus({ preventScroll: true }));
+  trigger.setAttribute("aria-controls", dialog.id);
+  trigger.setAttribute("aria-expanded", "false");
+
+  trigger.addEventListener("click", () => {
+    dialog.showModal();
+    trigger.setAttribute("aria-expanded", "true");
+  });
+  dialog.addEventListener("close", () => {
+    trigger.setAttribute("aria-expanded", "false");
+    trigger.focus({ preventScroll: true });
+  });
 
   // Clic sur l'arrière-plan du dialogue.
   dialog.addEventListener("click", (event) => {
@@ -48,6 +61,10 @@ export function initMenu() {
   for (const link of dialog.querySelectorAll("a[href]")) {
     link.addEventListener("click", () => dialog.close());
   }
+
+  // Dernière instruction : la bascule d'interface n'a lieu qu'une fois tout
+  // le comportement en place. Un échec plus haut laisse la rangée visible.
+  document.documentElement.classList.add("js-menu");
 }
 
 /**
