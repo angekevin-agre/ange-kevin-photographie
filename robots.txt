@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# La directive Sitemap sera ajoutée en même temps que sitemap.xml, une fois
+# l'URL publique confirmée : node tools/finalize-urls.mjs <url>
