@@ -24,6 +24,7 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { cp, mkdtemp, readFile, rm } from "node:fs/promises";
+import { connect } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -141,16 +142,41 @@ const serveur = BASE_EXTERNE
 
 // --- 0 ter. Robustesse face à une URL malformée ---------------------------
 // Une séquence d'échappement invalide (« % » seul, sans les deux chiffres
-// hexadécimaux attendus) faisait tomber decodeURIComponent, donc le serveur
-// entier. Ce test échouerait en se bloquant si la régression revenait.
+// hexadécimaux attendus) faisait tomber decodeURIComponent, et « //[ » faisait
+// tomber le constructeur URL — dans les deux cas, le serveur entier s'arrêtait.
+// Ces tests échoueraient en se bloquant si l'une des régressions revenait.
+//
+// « //[ » doit être envoyée telle quelle, octet pour octet : fetch() ré-encode
+// les caractères qu'elle juge invalides dans une ligne de requête, ce qui
+// masquerait la régression visée. Une socket brute reproduit la requête HTTP
+// exacte reçue par le serveur.
 {
-  const reponseMalformee = await fetch(`${BASE}/%`);
-  record("Serveur — une URL malformée renvoie 400 plutôt que de faire tomber le serveur",
-    reponseMalformee.status === 400, String(reponseMalformee.status));
+  const { hostname, port, pathname } = new URL(BASE);
+  const PREFIXE_BRUT = pathname.replace(/\/$/, "");
 
-  const reponseValide = await fetch(`${BASE}/index.html`);
-  record("Serveur — une requête valide suivante reste servie normalement",
-    reponseValide.status === 200, String(reponseValide.status));
+  const requeteBrute = (cibleBrute) => new Promise((resolve, reject) => {
+    const socket = connect(Number(port), hostname, () => {
+      socket.write(`GET ${cibleBrute} HTTP/1.1\r\nHost: ${hostname}\r\nConnection: close\r\n\r\n`);
+    });
+    let donnees = "";
+    socket.on("data", (morceau) => (donnees += morceau));
+    socket.on("end", () => resolve(Number(donnees.match(/^HTTP\/1\.[01] (\d{3})/)?.[1])));
+    socket.on("error", reject);
+  });
+
+  const CAS_MALFORMES = ["/%", "/%GG", "/%E0%A4%A", "//["];
+  for (const cas of CAS_MALFORMES) {
+    // Le constructeur URL échoue dès le début du traitement, avant toute
+    // vérification du sous-chemin : « //[ » n'a donc pas à le porter.
+    const cible = cas === "//[" ? cas : `${PREFIXE_BRUT}${cas}`;
+    const statutMalforme = await requeteBrute(cible);
+    record(`Serveur — une URL malformée (« ${cas} ») renvoie 400 plutôt que de faire tomber le serveur`,
+      statutMalforme === 400, String(statutMalforme));
+
+    const statutValide = await requeteBrute(`${PREFIXE_BRUT}/index.html`);
+    record(`Serveur — une requête valide suivant « ${cas} » reste servie normalement`,
+      statutValide === 200, String(statutValide));
+  }
 }
 
 const profile = await mkdtemp(join(tmpdir(), "akp-check-"));
@@ -936,6 +962,9 @@ try {
   // ne sont jamais touchés, et aucun domaine réel n'est présumé.
   {
     const FAUX_BASE = "https://exemple.invalid/essai";
+    const avant = new Map();
+    for (const nom of [...PAGES, "robots.txt"]) avant.set(nom, await readFile(nom, "utf8"));
+
     const temp = await mkdtemp(join(tmpdir(), "akp-finalize-"));
     try {
       for (const nom of [...PAGES, "robots.txt"]) await cp(nom, join(temp, nom));
@@ -982,9 +1011,13 @@ try {
       record("Finalisation des URL — canonical, og:url, sitemap et base cohérents (répertoire isolé)",
         probleme.length === 0, probleme.join(" ; "));
 
-      const indexTravail = await readFile("index.html", "utf8");
+      const inchanges = [];
+      for (const [nom, contenu] of avant) {
+        const actuel = await readFile(nom, "utf8");
+        if (actuel !== contenu) inchanges.push(nom);
+      }
       record("Finalisation des URL — les fichiers de travail restent intacts",
-        !indexTravail.includes('<link rel="canonical"'));
+        inchanges.length === 0, inchanges.join(" ; "));
     } finally {
       await rm(temp, { recursive: true, force: true }).catch(() => {});
     }

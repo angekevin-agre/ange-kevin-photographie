@@ -111,7 +111,15 @@ export function lancerServeur({ port = 8123, host = "127.0.0.1", racine = ".", p
   };
 
   const serveur = createServer(async (requete, reponse) => {
-    const { pathname } = new URL(requete.url, `http://${host}`);
+    let pathname;
+    try {
+      ({ pathname } = new URL(requete.url, `http://${host}`));
+    } catch (erreur) {
+      if (!(erreur instanceof TypeError)) throw erreur;
+      reponse.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+      reponse.end("400 — URL malformée\n");
+      return;
+    }
 
     // Hors du sous-chemin de publication : ce que renvoie GitHub Pages.
     if (PREFIXE && !(pathname === PREFIXE || pathname.startsWith(`${PREFIXE}/`))) {
