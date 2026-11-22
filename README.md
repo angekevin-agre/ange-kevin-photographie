@@ -73,13 +73,15 @@ HTML, CSS et JavaScript, sans framework et sans étape de compilation.
   typographie fluide, `color-mix()`, `:has()`, `@starting-style`,
   `@view-transition` pour les transitions entre pages, `animation-timeline:
   scroll()` pour la barre de progression.
-- **JavaScript en modules ES**, sans dépendance : 4 fichiers, 10,4 Ko au total
+- **JavaScript en modules ES**, sans dépendance : 4 fichiers, 17 Ko au total
   avant compression.
-- **Node.js** uniquement pour les scripts de `tools/` (tests, captures,
-  mesures, génération des emplacements). Aucun `package.json`, aucun
-  `node_modules` : rien à installer pour servir le site.
+- **Node.js 22.4 ou plus récent** pour les scripts de `tools/` (serveur local,
+  tests, captures, mesures, génération des emplacements) : ils utilisent les
+  `fetch` et `WebSocket` natifs. Aucun `package.json`, aucun `node_modules` :
+  rien à installer. Les scripts de test pilotent **Chrome**, localisé
+  automatiquement ou désigné par `CHROME_PATH`.
 
-Poids total de la couche CSS + JS : **43 Ko** non compressés, pour 1 252
+Poids total de la couche CSS + JS : **52 Ko** non compressés, pour 1 455
 lignes commentées.
 
 ---
@@ -93,8 +95,8 @@ lignes commentées.
 ├── evenements.html         Événements couverts, alimenté par events.json
 ├── a-propos.html           Gabarit en quatre chapitres, prêt à recevoir le récit
 ├── contact.html            Moyens de contact (sans formulaire, sans serveur)
-├── 404.html                Page d'erreur servie par GitHub Pages
-├── robots.txt              Exploration autorisée ; la directive Sitemap viendra avec l'URL
+├── 404.html                Page d'erreur servie par GitHub Pages, sous n'importe quelle URL
+├── robots.txt              Exploration autorisée — sans effet sous un sous-chemin (voir le fichier)
 ├── .nojekyll               Publication des fichiers tels quels
 │
 ├── assets/
@@ -117,10 +119,11 @@ lignes commentées.
 │       └── placeholders/   Emplacements photographiques (8 formats)
 │
 └── tools/                  Scripts Node sans dépendance
-    ├── check.mjs           30 vérifications fonctionnelles, accessibilité, SEO, responsive
-    ├── capture.mjs         Captures d'écran pleine page, 3 appareils
+    ├── serve.mjs           Serveur local reproduisant GitHub Pages (sous-chemin, 404)
+    ├── check.mjs           58 vérifications fonctionnelles, accessibilité, SEO, responsive
+    ├── capture.mjs         Captures d'écran pleine page, 3 appareils, relevé de console
     ├── metrics.mjs         Mesure LCP, CLS, FCP, poids et requêtes
-    ├── finalize-urls.mjs   Pose canonical, og:url et sitemap.xml
+    ├── finalize-urls.mjs   Pose canonical, og:url, sitemap.xml et la base de 404.html
     └── make-placeholders.mjs  Génère les emplacements SVG
 ```
 
@@ -133,9 +136,16 @@ lignes commentées.
   fois. Un générateur statique reste possible si le nombre de pages croît.
 - *Trois feuilles de style, pas une de plus.* Les jetons sont isolés pour
   qu'une évolution d'identité ne touche qu'un fichier.
-- *Chemins relatifs partout.* Aucun chemin absolu commençant par `/`, afin que
-  le site fonctionne sous le sous-répertoire de GitHub Pages comme à la racine
-  d'un domaine.
+- *Chemins relatifs partout, à une exception documentée.* Aucun chemin absolu,
+  afin que le site fonctionne sous le sous-répertoire de GitHub Pages comme à
+  la racine d'un domaine. L'exception est `404.html` : GitHub Pages la sert
+  pour **n'importe quelle** URL inexistante, y compris imbriquée
+  (`/<dépôt>/albums/2026/ete`), en conservant l'adresse demandée. Les chemins
+  relatifs s'y résoudraient alors depuis un répertoire inexistant. La page
+  porte donc une balise `<base>` écrite en dur sur le sous-chemin du dépôt —
+  un seul endroit à modifier, et `tools/finalize-urls.mjs` la met à jour —
+  qu'un script en ligne ramène à la racine lorsque le site n'est pas servi
+  sous ce sous-chemin.
 - *Les données avant le balisage.* Les événements vivent dans un seul fichier
   JSON, lu à la fois par l'accueil et par la page Événements.
 
@@ -177,10 +187,16 @@ Le mouvement suit une grammaire unique, définie par les jetons `--dur-*` et
 
 1. `prefers-reduced-motion: reduce` neutralise animations et transitions, et
    force l'affichage de tout contenu qui serait resté masqué.
-2. Sans JavaScript, rien n'est masqué et la navigation reste une rangée
-   lisible, le bouton de menu disparaissant.
-3. Si les modules ne se chargent pas alors que JavaScript est actif — le cas
-   le plus sournois — un minuteur de 3 secondes rend tout le contenu visible.
+2. Sans JavaScript, aucun état masqué n'est appliqué : `opacity`, `clip-path`
+   et `transform` de la révélation sont tous conditionnés à `html.js`. Rétablir
+   la seule opacité ne suffisait pas — la variante « balayage » rogne l'image
+   et la décale.
+3. Amélioration progressive de la navigation : la rangée de liens est l'état
+   par défaut, y compris en mobile. Le bouton de menu ne la remplace qu'une
+   fois `nav.js` arrivé au bout de son initialisation (classe `html.js-menu`).
+   Si les modules sont bloqués, ou si `<dialog>` n'est pas pris en charge, le
+   visiteur navigue toujours. Un minuteur de 3 secondes, posé par le script en
+   ligne, rend par ailleurs tout le contenu visible.
 
 ---
 
@@ -212,22 +228,48 @@ Cible : WCAG 2.2 AA.
 - Données structurées JSON-LD limitées à des informations vérifiables
   (`Person` : nom, métier, domaines). Aucune coordonnée, aucune note, aucun
   chiffre inventé.
-- Favicon SVG, `lang="fr"`, `robots.txt`, page 404 en `noindex, follow`.
+- Favicon SVG, `lang="fr"`, page 404 en `noindex, follow`.
+- `robots.txt` présent, mais **sans effet tant que le site est publié sous un
+  sous-chemin** : un robot ne lit ce fichier qu'à la racine d'un hôte, et
+  `https://<compte>.github.io/robots.txt` relève du dépôt `<compte>.github.io`,
+  pas de celui-ci. Sans conséquence ici, puisque rien n'est interdit — mais la
+  future directive `Sitemap` subira la même limite et le sitemap devra être
+  déclaré directement dans l'outil pour webmasters du moteur. Le détail est
+  écrit dans [`robots.txt`](robots.txt) lui-même, et `finalize-urls.mjs` le
+  rappelle à l'exécution.
 - Dimensions explicites, `loading="lazy"` et `decoding="async"` sur toutes les
   images sauf l'image LCP de chaque page, qui est en `fetchpriority="high"`.
 
-**Ce qui reste à poser :** le lien canonique, `og:url` absolu et `sitemap.xml`
-exigent une URL publique confirmée. Les publier avant confirmation enverrait
-un mauvais signal aux moteurs si l'adresse changeait. Une fois l'adresse
-arrêtée :
+**Métadonnées vérifiées.** Un test automatisé contrôle sur les six pages la
+présence et la valeur de `og:type`, `og:site_name`, `og:locale`, `og:title`,
+`og:description`, `og:image`, `og:image:alt`, `twitter:card`, `theme-color` et
+du favicon, la validité du JSON-LD, le `noindex` de la page 404 — et **l'absence**
+de `canonical` et d'`og:url`, pour que ce choix ne puisse pas être défait par
+inadvertance.
+
+**Ce qui reste à poser, avant publication :** le lien canonique, `og:url`
+absolu et `sitemap.xml` exigent une URL publique confirmée. Les publier avant
+confirmation enverrait un mauvais signal aux moteurs si l'adresse changeait.
+Une fois l'adresse arrêtée :
 
 ```bash
 node tools/finalize-urls.mjs https://angekevin-agre.github.io/ange-kevin-photographie
 ```
 
 Le script écrit le canonique et `og:url` dans chaque page, absolutise
-`og:image`, génère `sitemap.xml` et ajoute la directive `Sitemap` à
-`robots.txt`. Il peut être relancé sans dommage.
+`og:image`, met la balise `<base>` de `404.html` au sous-chemin réel, génère
+`sitemap.xml` et ajoute la directive `Sitemap` à `robots.txt`. Il peut être
+relancé sans dommage.
+
+Liste de contrôle avant mise en ligne :
+
+| À faire | Pourquoi c'est en attente |
+| --- | --- |
+| Confirmer l'URL publique, puis lancer `finalize-urls.mjs` | Canonical, `og:url` et sitemap exigent une adresse certaine |
+| Déclarer le sitemap dans l'outil pour webmasters | `robots.txt` n'est pas lu sous un sous-chemin |
+| Vérifier la balise `<base>` de `404.html` si le dépôt est renommé | Elle porte le sous-chemin en dur ; le script la met à jour |
+| Remplacer le visuel Open Graph typographique | Aucune photographie disponible à ce jour |
+| Compléter À propos et Contact | Les textes et coordonnées n'ont pas été fournis |
 
 ---
 
@@ -237,25 +279,29 @@ Mesures obtenues avec `node tools/metrics.mjs`, le 22 novembre 2026.
 
 **Conditions :** Chrome 158 headless, viewport 390 × 844 en émulation mobile,
 processeur bridé 4×, réseau bridé à 1,6 Mb/s en réception et 150 ms de RTT,
-cache vidé à chaque page, serveur local `python -m http.server`.
+cache vidé à chaque page, serveur local `tools/serve.mjs` sur la boucle locale.
 
 | Page | FCP | LCP | CLS | Requêtes | Poids |
 | --- | --- | --- | --- | --- | --- |
-| Accueil | 1 144 ms | 1 144 ms | 0 | 14 | 68 Ko |
-| Portfolio | 708 ms | 1 412 ms | 0 | 12 | 63 Ko |
-| Événements | 668 ms | 1 352 ms | 0 | 14 | 61 Ko |
-| À propos | 692 ms | 1 392 ms | 0 | 11 | 57 Ko |
-| Contact | 676 ms | 676 ms | 0 | 10 | 54 Ko |
+| Accueil | 1 220 ms | 1 220 ms | 0 | 14 | 78 Ko |
+| Portfolio | 788 ms | 1 488 ms | 0 | 12 | 72 Ko |
+| Événements | 784 ms | 1 484 ms | 0 | 14 | 71 Ko |
+| À propos | 724 ms | 1 408 ms | 0 | 11 | 66 Ko |
+| Contact | 740 ms | 740 ms | 0 | 10 | 63 Ko |
 
-LCP le plus élevé : **1 412 ms** pour une cible de 2 500 ms. CLS : **0** sur
-les cinq pages, les dimensions des images étant toutes réservées.
+LCP le plus élevé : **1 488 ms** pour une cible de 2 500 ms. CLS : **0** sur
+les cinq pages, les dimensions des images étant toutes réservées. D'une
+exécution à l'autre, les temps varient d'environ 15 % : seules les différences
+nettes sont significatives.
 
 **Ce que ces chiffres ne sont pas.** Ce n'est pas un audit Lighthouse et ce ne
-sont pas des données de terrain : un hébergement réel ajoute la latence du CDN
-et la variabilité des appareils. À l'inverse, le serveur de test répond en
-HTTP/1.1 sans multiplexage, ce qui pénalise le LCP par rapport à GitHub Pages,
-servi en HTTP/2. **INP n'est pas mesuré** : cet indicateur exige des
-interactions réelles d'utilisateurs.
+sont pas des données de terrain. Les deux environnements diffèrent en sens
+contraires, et aucune transposition n'est possible dans un sens ou dans
+l'autre : le serveur de test répond en HTTP/1.1 en clair, sans multiplexage ni
+compression, mais depuis la machine elle-même ; GitHub Pages sert le site en
+HTTP/2 sur TLS, avec compression, mais depuis un CDN distant, avec la
+variabilité des appareils réels. **INP n'est pas mesuré** : cet indicateur
+exige des interactions réelles d'utilisateurs.
 
 Optimisations en place : aucune police distante, aucun script tiers, modules
 préchargés par `modulepreload` pour éviter la cascade de découverte,
@@ -333,30 +379,47 @@ utilisés.
 
 ## Lancer le site en local
 
-Le site est statique : n'importe quel serveur de fichiers convient. Ouvrir
-`index.html` directement depuis le disque fonctionne aussi, à une exception
-près — le chargement de `events.json` requiert le protocole HTTP.
+**Un serveur HTTP est nécessaire.** Le serveur fourni reproduit en plus les
+deux particularités de GitHub Pages — publication sous un sous-chemin, et
+`404.html` servie avec le statut 404 pour toute URL inexistante — ce qu'aucun
+serveur de fichiers générique ne fait :
+
+```bash
+node tools/serve.mjs --prefix=ange-kevin-photographie
+```
+
+Puis ouvrir <http://127.0.0.1:8123/ange-kevin-photographie/>. Sans `--prefix`,
+le site est servi à la racine, comme sous un domaine propre.
+
+N'importe quel autre serveur statique convient pour une simple relecture :
 
 ```bash
 python -m http.server 8123 --bind 127.0.0.1
-```
-
-Puis ouvrir <http://127.0.0.1:8123/>. Variante Node :
-
-```bash
 npx --yes serve . -l 8123
 ```
+
+**Ouvrir `index.html` depuis le disque ne suffit pas.** Sous le protocole
+`file:`, la politique d'origine du navigateur bloque le chargement des modules
+ES : *aucun* des quatre fichiers de `assets/js/` ne s'exécute, et le
+chargement de `events.json` échoue également. La page reste lisible — c'est
+précisément ce que garantissent les garde-fous décrits plus haut : la
+navigation reste une rangée de liens, le minuteur de 3 secondes affiche tout
+le contenu — mais le menu mobile, la révélation au défilement, l'état de
+l'entête et les albums sont absents. Le rendu n'est donc pas représentatif.
 
 ---
 
 ## Tests et vérifications
 
-Les scripts de `tools/` pilotent Chrome via le protocole DevTools, sans
-installer la moindre dépendance. Chrome est localisé automatiquement ; sinon,
-définir `CHROME_PATH`. Le serveur local doit tourner dans un autre terminal.
+**Prérequis réels :** Node.js 22.4 ou plus récent — les scripts utilisent les
+`fetch` et `WebSocket` natifs — et Google Chrome ou Chromium, localisé
+automatiquement ou désigné par `CHROME_PATH`. Aucune dépendance à installer.
+Chaque script lance lui-même son serveur de test, avec le sous-chemin de
+publication : il n'y a rien à démarrer dans un autre terminal. L'option
+`--base=<url>` permet d'utiliser un serveur déjà lancé.
 
 ```bash
-node tools/check.mjs      # 30 vérifications : CSS, menu, clavier, albums, responsive, SEO
+node tools/check.mjs      # 58 vérifications : CSS, menu, clavier, albums, 404, responsive, SEO
 node tools/metrics.mjs    # LCP, CLS, FCP, requêtes, poids, sous bridage mobile
 node tools/capture.mjs    # 18 captures pleine page dans .captures/ (ignoré par Git)
 ```
@@ -367,7 +430,15 @@ couvre notamment :
 - ouverture et fermeture du menu mobile, piégeage puis restitution du focus ;
 - lien d'évitement focusable et visible, cible existante ;
 - aucun contenu masqué avec `prefers-reduced-motion`, sans JavaScript, ou
-  lorsque les modules sont injoignables ;
+  lorsque les modules sont injoignables — y compris le rognage et le décalage
+  de la variante « balayage », que la seule opacité ne couvrait pas ;
+- navigation utilisable quand les modules sont bloqués, et bascule effective
+  vers le bouton de menu quand ils se chargent ;
+- absence de chevauchement entre la marque et les liens à 320 et 390 px, le
+  premier lien étant réellement cliquable (`elementFromPoint`) ;
+- page 404 servie sous une URL imbriquée inexistante, avec et sans JavaScript :
+  statut 404, trois feuilles de style appliquées, logo chargé, liens de
+  navigation résolus, `noindex` conservé, lien d'évitement toujours interne ;
 - contraste du texte courant calculé à partir des styles effectifs, et taille
   des cibles interactives ;
 - syntaxe des feuilles de style : un commentaire mal fermé fait silencieusement
@@ -375,6 +446,16 @@ couvre notamment :
 - rendu des albums à partir d'un jeu d'essai injecté par interception de la
   requête — tri, `srcset`, chargement différé, date, refus d'une URL
   `javascript:` — sans jamais modifier `events.json` ;
+- date d'album sous le fuseau `America/Los_Angeles`, pour prévenir le recul
+  d'un jour que provoque l'interprétation UTC d'une date ISO ;
+- résistance aux données invalides : un album malformé ou une déclinaison
+  d'image malformée est écarté seul, les albums valides restent affichés, et
+  les trois états — liste vide, données invalides, erreur de chargement — sont
+  distingués et annoncés ;
+- attribut `sizes` comparé à la largeur de rendu mesurée des couvertures, sur
+  deux pages et quinze largeurs, seuils de colonnes compris ;
+- métadonnées de partage, JSON-LD, et absence de `canonical` ou d'`og:url`
+  tant que l'URL publique n'est pas confirmée ;
 - révélation de toutes les photographies après parcours de la page ;
 - **absence de débordement horizontal sur 6 pages × 8 largeurs** (320, 360,
   390, 430, 768, 1024, 1440, 1920) ;
@@ -397,9 +478,15 @@ la racine du dépôt (*Settings → Pages → Deploy from a branch*).
 
 - `.nojekyll` est présent pour que les fichiers soient publiés sans traitement
   Jekyll.
-- Tous les chemins sont relatifs : le site fonctionne sous
+- Les chemins des pages sont relatifs : le site fonctionne sous
   `https://<compte>.github.io/<dépôt>/` comme à la racine d'un domaine propre.
-- `404.html` est servie automatiquement par GitHub Pages.
+- `404.html` est servie automatiquement pour **toute** URL inexistante, en
+  conservant l'adresse demandée. Elle porte pour cette raison une balise
+  `<base>` fixée au sous-chemin du dépôt, ramenée à la racine par un script en
+  ligne lorsque le site est servi ailleurs. **Si le dépôt est renommé**, cette
+  valeur est le seul endroit à mettre à jour — `finalize-urls.mjs` s'en charge.
+- `robots.txt` n'est pas lu sous un sous-chemin (voir
+  [Référencement](#référencement)).
 - Une fois l'adresse publique confirmée, exécuter `tools/finalize-urls.mjs`
   (voir [Référencement](#référencement)).
 
@@ -467,6 +554,20 @@ l'entête, le menu et le pied de page.
   disponible.
 - Aucune mesure Lighthouse ni donnée de terrain (voir
   [Performance](#performance)).
+- `robots.txt` est inopérant tant que le site est publié sous un sous-chemin
+  GitHub Pages. Sans conséquence — rien n'est interdit — mais la directive
+  `Sitemap` devra être relayée dans l'outil pour webmasters du moteur.
+- `404.html` porte un sous-chemin en dur dans sa balise `<base>`. Servie sous
+  une URL imbriquée depuis un hôte inattendu **et** sans JavaScript, elle
+  perdrait ses styles ; avec JavaScript, le script en ligne corrige la base.
+- Le menu mobile n'apparaît qu'une fois `nav.js` exécuté. Avant cela — et si
+  les modules ne se chargent jamais — l'entête affiche la rangée de liens sur
+  une seconde ligne en mobile, ce qui le rend légèrement plus haut que la
+  hauteur de référence `--header-h`.
+- La validation des données d'albums est faite à la main dans `albums.js`, et
+  ne couvre pas l'intégralité de `events.schema.json` (elle vérifie ce dont le
+  rendu dépend). Aucun validateur JSON Schema n'est embarqué : ce serait une
+  dépendance pour un fichier édité à la main.
 
 ---
 

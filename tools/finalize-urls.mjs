@@ -16,6 +16,11 @@
  *   - la directive Sitemap dans robots.txt.
  *
  * La page 404 est exclue du sitemap et reçoit un canonique vers elle-même.
+ *
+ * Limite assumée : sur un site de projet GitHub Pages, le robots.txt écrit
+ * ici se trouve sous le sous-chemin du dépôt, où aucun robot ne le lit. La
+ * directive Sitemap n'y suffira donc pas ; le script le rappelle à la fin.
+ * Voir robots.txt pour le détail.
  */
 
 import { readdir, readFile, writeFile } from "node:fs/promises";
@@ -64,6 +69,15 @@ for (const page of pages) {
     `$1${base}/assets/img/og-cover.png$2`
   );
 
+  // La page 404 porte une <base> écrite en dur : GitHub Pages la sert pour
+  // des URL imbriquées, où les chemins relatifs ne résolvent plus. Elle doit
+  // suivre le sous-chemin réel de publication (voir 404.html).
+  if (page === "404.html") {
+    const segments = new URL(base).pathname.split("/").filter(Boolean);
+    const sousChemin = segments.length ? `/${segments.join("/")}/` : "/";
+    html = html.replace(/(<base href=")[^"]*(">)/, `$1${sousChemin}$2`);
+  }
+
   await writeFile(page, html, "utf8");
   if (page !== "404.html") entries.push(url);
   console.log(`mis à jour : ${page}`);
@@ -83,3 +97,14 @@ robots = /^Sitemap:/m.test(robots)
   : `${robots.trimEnd()}\n\nSitemap: ${base}/sitemap.xml\n`;
 await writeFile("robots.txt", robots, "utf8");
 console.log("mis à jour : robots.txt");
+
+// Avertissement : sous un sous-chemin, robots.txt n'est lu par aucun robot.
+const sousChemin = new URL(base).pathname.split("/").filter(Boolean).join("/");
+if (sousChemin) {
+  console.warn(
+    `\nAttention : le site est publié sous le sous-chemin « /${sousChemin}/ ».` +
+    "\nUn robot ne lit robots.txt qu'à la racine de l'hôte : le fichier écrit" +
+    "\nici ne sera donc pas consulté, directive Sitemap comprise. Déclarer" +
+    `\n${base}/sitemap.xml directement dans l'outil pour webmasters du moteur.`
+  );
+}
