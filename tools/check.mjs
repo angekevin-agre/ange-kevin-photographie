@@ -321,6 +321,32 @@ try {
   record("Sans JavaScript — marque et liens ne se chevauchent pas (320 et 390 px)",
     chevauchements.length === 0, chevauchements.join(" ; "));
 
+  // En repli, l'entête occupe deux lignes : le rail collant du portfolio et
+  // les ancres de section doivent se décaler d'autant, sinon le rail passe
+  // sous l'entête et les titres visés sont masqués à l'arrivée.
+  await visit("portfolio.html", { width: 390, height: 844, attente: 400 });
+  await cdp.evaluate(`
+    (document.documentElement.style.scrollBehavior = "auto", window.scrollTo(0, 1500), 1)`);
+  await sleep(300);
+  const railRepli = await cdp.evaluate(`
+    (() => {
+      const entete = document.querySelector(".site-header").getBoundingClientRect();
+      const rail = document.querySelector(".rail").getBoundingClientRect();
+      const lien = document.querySelector(".rail a").getBoundingClientRect();
+      const dessus = document.elementFromPoint(lien.left + lien.width / 2, lien.top + lien.height / 2);
+      return {
+        enteteBas: Math.round(entete.bottom),
+        railHaut: Math.round(rail.top),
+        recouvert: !(dessus && dessus.closest(".rail")),
+      };
+    })()`);
+  // Tolérance de 3 px : le rail est volontairement remonté d'un pixel pour que
+  // son filet supérieur se confonde avec le filet inférieur de l'entête.
+  record("Sans JavaScript — le rail collant ne passe pas sous l'entête",
+    railRepli.railHaut >= railRepli.enteteBas - 3 && !railRepli.recouvert,
+    `entête jusqu'à ${railRepli.enteteBas}px, rail à ${railRepli.railHaut}px` +
+      (railRepli.recouvert ? ", premier lien recouvert" : ""));
+
   await cdp.send("Emulation.setScriptExecutionDisabled", { value: false });
 
   // --- 3 bis. Contrastes WCAG, réellement calculés -------------------------

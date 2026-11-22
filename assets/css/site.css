@@ -126,7 +126,15 @@
 @media (max-width: 63.999em) {
   /* Rangée de repli : la marque occupe la première ligne, les liens la
      seconde. Les deux ne se disputent plus la largeur, ce qui supprime le
-     chevauchement observé à 320 et 390 px. */
+     chevauchement observé à 320 et 390 px.
+
+     L'entête est alors plus haut, et « --header-h » doit suivre : il règle à
+     la fois la hauteur minimale de l'entête, le décalage du rail collant du
+     portfolio et le scroll-padding des ancres. Sans cela, le rail se glissait
+     derrière l'entête et devenait inatteignable. La valeur est légèrement
+     supérieure à la hauteur mesurée des deux lignes, afin que la hauteur
+     minimale la fixe exactement, quelles que soient les métriques de police. */
+  html:not(.js-menu) { --header-h: 7rem; }
   .site-header__inner { flex-wrap: wrap; row-gap: var(--s-1); }
   .nav { flex: 1 0 100%; }
   .nav__list {

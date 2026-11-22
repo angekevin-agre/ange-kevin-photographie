@@ -120,7 +120,7 @@ lignes commentées.
 │
 └── tools/                  Scripts Node sans dépendance
     ├── serve.mjs           Serveur local reproduisant GitHub Pages (sous-chemin, 404)
-    ├── check.mjs           58 vérifications fonctionnelles, accessibilité, SEO, responsive
+    ├── check.mjs           59 vérifications fonctionnelles, accessibilité, SEO, responsive
     ├── capture.mjs         Captures d'écran pleine page, 3 appareils, relevé de console
     ├── metrics.mjs         Mesure LCP, CLS, FCP, poids et requêtes
     ├── finalize-urls.mjs   Pose canonical, og:url, sitemap.xml et la base de 404.html
@@ -419,7 +419,7 @@ publication : il n'y a rien à démarrer dans un autre terminal. L'option
 `--base=<url>` permet d'utiliser un serveur déjà lancé.
 
 ```bash
-node tools/check.mjs      # 58 vérifications : CSS, menu, clavier, albums, 404, responsive, SEO
+node tools/check.mjs      # 59 vérifications : CSS, menu, clavier, albums, 404, responsive, SEO
 node tools/metrics.mjs    # LCP, CLS, FCP, requêtes, poids, sous bridage mobile
 node tools/capture.mjs    # 18 captures pleine page dans .captures/ (ignoré par Git)
 ```
@@ -436,6 +436,7 @@ couvre notamment :
   vers le bouton de menu quand ils se chargent ;
 - absence de chevauchement entre la marque et les liens à 320 et 390 px, le
   premier lien étant réellement cliquable (`elementFromPoint`) ;
+- rail collant du portfolio non masqué par l'entête à deux lignes du repli ;
 - page 404 servie sous une URL imbriquée inexistante, avec et sans JavaScript :
   statut 404, trois feuilles de style appliquées, logo chargé, liens de
   navigation résolus, `noindex` conservé, lien d'évitement toujours interne ;
@@ -562,8 +563,9 @@ l'entête, le menu et le pied de page.
   perdrait ses styles ; avec JavaScript, le script en ligne corrige la base.
 - Le menu mobile n'apparaît qu'une fois `nav.js` exécuté. Avant cela — et si
   les modules ne se chargent jamais — l'entête affiche la rangée de liens sur
-  une seconde ligne en mobile, ce qui le rend légèrement plus haut que la
-  hauteur de référence `--header-h`.
+  une seconde ligne en mobile. `--header-h` suit cette hauteur dans ce mode,
+  de sorte que le rail collant et les ancres restent correctement décalés,
+  mais l'entête y occupe davantage de place à l'écran.
 - La validation des données d'albums est faite à la main dans `albums.js`, et
   ne couvre pas l'intégralité de `events.schema.json` (elle vérifie ce dont le
   rendu dépend). Aucun validateur JSON Schema n'est embarqué : ce serait une
