@@ -42,6 +42,12 @@ const TYPES = {
 };
 
 /**
+ * Distingue une URL malformée (faute de l'appelant, réponse 400) d'une
+ * erreur de programmation (qui doit continuer à se voir, pas être masquée).
+ */
+class RequeteMalformee extends Error {}
+
+/**
  * Normalise un sous-chemin de publication en « /segment », ou « » pour la
  * racine. La barre initiale est facultative : certains shells (Git Bash)
  * traduisent un argument commençant par « / » en chemin de fichier.
@@ -67,7 +73,15 @@ export function lancerServeur({ port = 8123, host = "127.0.0.1", racine = ".", p
    * remontée (« .. ») ne peut échapper à la racine servie.
    */
   const fichier = async (chemin) => {
-    const segments = decodeURIComponent(chemin).split("/").filter((s) => s && s !== ".");
+    let decode;
+    try {
+      decode = decodeURIComponent(chemin);
+    } catch (erreur) {
+      if (erreur instanceof URIError) throw new RequeteMalformee(chemin);
+      throw erreur;
+    }
+
+    const segments = decode.split("/").filter((s) => s && s !== ".");
     if (segments.includes("..")) return null;
 
     const cible = join(RACINE, ...segments);
@@ -107,7 +121,15 @@ export function lancerServeur({ port = 8123, host = "127.0.0.1", racine = ".", p
     }
 
     const interne = PREFIXE ? pathname.slice(PREFIXE.length) || "/" : pathname;
-    const cible = await fichier(interne);
+    let cible;
+    try {
+      cible = await fichier(interne);
+    } catch (erreur) {
+      if (!(erreur instanceof RequeteMalformee)) throw erreur;
+      reponse.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+      reponse.end("400 — URL malformée\n");
+      return;
+    }
     if (cible) {
       envoyer(reponse, 200, cible);
       return;

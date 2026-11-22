@@ -63,7 +63,11 @@
 <body>
 
 <div class="progress" aria-hidden="true"></div>
-<a class="skip" href="#contenu">Aller au contenu</a>
+<!-- Une ancre nue (« #contenu ») résoudrait contre <base>, pas contre l'URL
+     demandée : le lien quitterait la page pour l'accueil. En passant par le
+     nom du fichier, la résolution via <base> retombe sur cette page elle-même,
+     avec ou sans JavaScript. -->
+<a class="skip" href="404.html#contenu">Aller au contenu</a>
 
 <header class="site-header" data-header>
   <div class="site-header__inner shell">
@@ -157,15 +161,6 @@
     if (noeuds[i].getBoundingClientRect().top < window.innerHeight) {
       noeuds[i].classList.add("is-revealed");
     }
-  }
-</script>
-<script>
-  /* Un <base> fait résoudre « #contenu » contre la base, et non contre l'URL
-     courante : le lien d'évitement quitterait la page. On le réancre donc sur
-     l'adresse réellement demandée. Sans JavaScript il mènerait à l'accueil :
-     dégradation acceptée, le contenu restant atteignable. */
-  for (var ancres = document.querySelectorAll('a[href^="#"]'), i = 0; i < ancres.length; i++) {
-    ancres[i].setAttribute("href", location.pathname + location.search + ancres[i].getAttribute("href"));
   }
 </script>
 <script type="module" src="assets/js/main.js"></script>

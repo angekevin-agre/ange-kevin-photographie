@@ -505,9 +505,11 @@ n'est donc présentée nulle part comme l'URL canonique.
 | `develop` | Intégration |
 | `feature/*` | Développement d'une fonctionnalité |
 
-PHOTO-01 a été développée sur `feature/portfolio-ui`. Aucune fusion, aucune
-publication et aucune Pull Request n'ont été effectuées : l'intégration vers
-`develop` puis `main` reste une décision du propriétaire du dépôt.
+PHOTO-01 a été développée sur `feature/portfolio-ui` et proposée dans la
+[Pull Request #1](https://github.com/angekevin-agre/ange-kevin-photographie/pull/1).
+Elle est ouverte mais n'a pas été fusionnée ; aucune publication n'a eu lieu.
+L'intégration vers `develop` puis `main`, ainsi que la mise en ligne, restent
+une décision du propriétaire du dépôt.
 
 ---
 

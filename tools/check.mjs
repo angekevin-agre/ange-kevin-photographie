@@ -23,7 +23,7 @@
 
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { cp, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -138,6 +138,20 @@ class Devtools {
 const serveur = BASE_EXTERNE
   ? null
   : (await lancerServeur({ port: PORT_HTTP, prefix: SOUS_CHEMIN })).serveur;
+
+// --- 0 ter. Robustesse face à une URL malformée ---------------------------
+// Une séquence d'échappement invalide (« % » seul, sans les deux chiffres
+// hexadécimaux attendus) faisait tomber decodeURIComponent, donc le serveur
+// entier. Ce test échouerait en se bloquant si la régression revenait.
+{
+  const reponseMalformee = await fetch(`${BASE}/%`);
+  record("Serveur — une URL malformée renvoie 400 plutôt que de faire tomber le serveur",
+    reponseMalformee.status === 400, String(reponseMalformee.status));
+
+  const reponseValide = await fetch(`${BASE}/index.html`);
+  record("Serveur — une requête valide suivante reste servie normalement",
+    reponseValide.status === 200, String(reponseValide.status));
+}
 
 const profile = await mkdtemp(join(tmpdir(), "akp-check-"));
 const browser = spawn(CHROME, [
@@ -830,11 +844,15 @@ try {
     seo.length === 0, seo.join(" ; "));
 
   // --- 8 bis. Métadonnées de partage et données structurées ---------------
-  // L'URL publique n'étant pas confirmée, canonical et og:url doivent rester
-  // ABSENTS : une adresse supposée puis corrigée désoriente les moteurs. Ce
-  // test fige ce choix, et échouera si l'on publie une URL par inadvertance
-  // sans passer par tools/finalize-urls.mjs.
+  // Avant confirmation de l'URL publique, canonical et og:url doivent rester
+  // ABSENTS : une adresse supposée puis corrigée désoriente les moteurs. Une
+  // fois tools/finalize-urls.mjs exécuté sur les fichiers de travail, ils
+  // doivent au contraire être présents et cohérents entre les pages — sans
+  // qu'aucun domaine précis ne soit imposé ici, puisque l'adresse réelle
+  // n'est confirmée qu'au moment de la publication. L'état est déduit de la
+  // première page (index.html) et imposé aux suivantes.
   const metadonnees = [];
+  let basePubliee;
   for (const file of PAGES) {
     await visit(file, { width: 1440, height: 900, mobile: false, attente: 250 });
     const releve = await cdp.evaluate(`
@@ -878,8 +896,16 @@ try {
     if (releve.ld && releve.ld["@context"] !== "https://schema.org") {
       metadonnees.push(`${file} : JSON-LD sans contexte schema.org`);
     }
-    if (releve.canonical) metadonnees.push(`${file} : canonical publié avant confirmation de l'URL (${releve.canonical})`);
-    if (releve.ogUrl) metadonnees.push(`${file} : og:url publié avant confirmation de l'URL (${releve.ogUrl})`);
+    if (file === "index.html") basePubliee = releve.canonical ? releve.canonical.replace(/\/$/, "") : null;
+
+    if (!basePubliee) {
+      if (releve.canonical) metadonnees.push(`${file} : canonical publié avant confirmation de l'URL (${releve.canonical})`);
+      if (releve.ogUrl) metadonnees.push(`${file} : og:url publié avant confirmation de l'URL (${releve.ogUrl})`);
+    } else {
+      const attendu = file === "index.html" ? `${basePubliee}/` : `${basePubliee}/${file}`;
+      if (releve.canonical !== attendu) metadonnees.push(`${file} : canonical = ${releve.canonical}`);
+      if (releve.ogUrl !== attendu) metadonnees.push(`${file} : og:url = ${releve.ogUrl}`);
+    }
     if (file === "404.html" && !(releve.robots ?? "").includes("noindex")) {
       metadonnees.push("404.html : directive noindex absente");
     }
@@ -887,8 +913,82 @@ try {
       metadonnees.push(`${file} : noindex posé à tort`);
     }
   }
+  if (basePubliee) {
+    const sitemap = await readFile("sitemap.xml", "utf8").catch(() => null);
+    if (!sitemap) {
+      metadonnees.push("sitemap.xml absent malgré des URL publiées");
+    } else {
+      for (const file of PAGES) {
+        if (file === "404.html") continue;
+        const url = file === "index.html" ? `${basePubliee}/` : `${basePubliee}/${file}`;
+        if (!sitemap.includes(`<loc>${url}</loc>`)) metadonnees.push(`sitemap.xml : ${url} absente`);
+      }
+    }
+  }
   record(`SEO — métadonnées de partage et données structurées (${PAGES.length} pages)`,
     metadonnees.length === 0, metadonnees.join(" ; "));
+
+  // --- 8 ter. Finalisation des URL, en répertoire isolé --------------------
+  // tools/finalize-urls.mjs écrit canonical, og:url, og:image, sitemap.xml et
+  // la base de 404.html une fois l'adresse publique confirmée — l'état que le
+  // test ci-dessus refuse tant qu'il n'est pas exécuté. On le vérifie donc ici
+  // séparément, sur une copie temporaire des pages : les fichiers de travail
+  // ne sont jamais touchés, et aucun domaine réel n'est présumé.
+  {
+    const FAUX_BASE = "https://exemple.invalid/essai";
+    const temp = await mkdtemp(join(tmpdir(), "akp-finalize-"));
+    try {
+      for (const nom of [...PAGES, "robots.txt"]) await cp(nom, join(temp, nom));
+
+      await new Promise((resoudre, rejeter) => {
+        const proc = spawn(
+          process.execPath,
+          [join(process.cwd(), "tools", "finalize-urls.mjs"), FAUX_BASE],
+          { cwd: temp, stdio: "ignore" }
+        );
+        proc.once("exit", (code) => (code === 0 ? resoudre() : rejeter(new Error(`finalize-urls.mjs : code ${code}`))));
+        proc.once("error", rejeter);
+      });
+
+      const probleme = [];
+      for (const page of PAGES) {
+        const html = await readFile(join(temp, page), "utf8");
+        const url = page === "index.html" ? `${FAUX_BASE}/` : `${FAUX_BASE}/${page}`;
+        const canonical = html.match(/<link rel="canonical" href="([^"]*)">/)?.[1];
+        const ogUrl = html.match(/<meta property="og:url" content="([^"]*)">/)?.[1];
+        if (canonical !== url) probleme.push(`${page} : canonical = ${canonical}`);
+        if (ogUrl !== url) probleme.push(`${page} : og:url = ${ogUrl}`);
+        if (page === "404.html") {
+          const base404 = html.match(/<base href="([^"]*)">/)?.[1];
+          if (base404 !== "/essai/") probleme.push(`404.html : base = ${base404}`);
+        }
+      }
+
+      const sitemap = await readFile(join(temp, "sitemap.xml"), "utf8").catch(() => null);
+      const pagesSansErreur = PAGES.filter((p) => p !== "404.html");
+      if (!sitemap) {
+        probleme.push("sitemap.xml non écrit");
+      } else {
+        for (const page of pagesSansErreur) {
+          const url = page === "index.html" ? `${FAUX_BASE}/` : `${FAUX_BASE}/${page}`;
+          if (!sitemap.includes(`<loc>${url}</loc>`)) probleme.push(`sitemap.xml : ${url} absente`);
+        }
+        if (sitemap.includes(`<loc>${FAUX_BASE}/404.html</loc>`)) probleme.push("sitemap.xml : 404.html ne devrait pas y figurer");
+      }
+
+      const robots = await readFile(join(temp, "robots.txt"), "utf8").catch(() => "");
+      if (!robots.includes(`Sitemap: ${FAUX_BASE}/sitemap.xml`)) probleme.push("robots.txt : directive Sitemap absente ou incorrecte");
+
+      record("Finalisation des URL — canonical, og:url, sitemap et base cohérents (répertoire isolé)",
+        probleme.length === 0, probleme.join(" ; "));
+
+      const indexTravail = await readFile("index.html", "utf8");
+      record("Finalisation des URL — les fichiers de travail restent intacts",
+        !indexTravail.includes('<link rel="canonical"'));
+    } finally {
+      await rm(temp, { recursive: true, force: true }).catch(() => {});
+    }
+  }
 
   // --- 9. Page 404 servie sous une URL imbriquée inexistante ---------------
   // Cas réel de GitHub Pages : l'adresse demandée est conservée, de sorte que
@@ -927,8 +1027,7 @@ try {
         accueil: new URL(document.querySelector(".brand").href).pathname,
         robots: document.querySelector('meta[name="robots"]')?.content ?? "",
         titre: document.querySelector("h1")?.textContent.trim() ?? "",
-        skipAncre: skip.getAttribute("href"),
-        skipCible: skip.hash === "#contenu" && !!document.getElementById("contenu"),
+        skipHref: skip.href,
         casses,
       };
     })()`;
@@ -954,12 +1053,15 @@ try {
     record(`404 imbriquée (${mode}) — statut noindex et contenu conservés`,
       releve.robots.includes("noindex") && releve.titre.length > 0,
       `${releve.robots} / « ${releve.titre} »`);
-  }
 
-  // Le lien d'évitement doit rester une ancre interne malgré <base>.
-  record("404 imbriquée — le lien d'évitement reste une ancre de la page courante",
-    avecJs.skipCible === true && avecJs.skipAncre.startsWith(`${SOUS_CHEMIN}/albums/2026/`),
-    avecJs.skipAncre);
+    // Le lien d'évitement doit rester sur la page 404 malgré <base>, qu'une
+    // ancre nue ferait résoudre vers l'accueil (voir 404.html) — sans dépendre
+    // de JavaScript pour corriger la cible.
+    const skip = new URL(releve.skipHref);
+    record(`404 imbriquée (${mode}) — le lien d'évitement reste sur la page 404`,
+      skip.pathname === `${SOUS_CHEMIN}/404.html` && skip.hash === "#contenu",
+      releve.skipHref);
+  }
 
   // Servie directement, hors URL imbriquée, la page doit rester stylée : c'est
   // alors le script en ligne qui ramène la base au bon endroit.
