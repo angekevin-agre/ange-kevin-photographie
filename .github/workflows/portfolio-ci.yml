@@ -1,0 +1,55 @@
+name: Vérifications du portfolio
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: portfolio-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests du site
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Installer Chrome
+        id: chrome
+        uses: browser-actions/setup-chrome@v2
+
+      - name: Installer ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Vérifier les pages générées
+        run: node tools/build-reportages.mjs --check
+
+      - name: Tester les reportages et leur sécurité
+        run: node tools/test-reportages.mjs
+
+      - name: Vérifier le site dans Chrome
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: node tools/check.mjs
+
+      - name: Tester la gestion des captures bloquées
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: node tools/test-capture.mjs
