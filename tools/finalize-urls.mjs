@@ -10,6 +10,10 @@
  * ce script les pose tous d'un coup, et peut être relancé sans dommage.
  *
  * Il écrit :
+ *   - content/site.json : l'adresse confirmée, que tools/build-reportages.mjs
+ *     relit pour que la régénération d'un reportage conserve canonical, og:url
+ *     et og:image absolue (sans quoi la première retouche éditoriale les
+ *     effacerait) ;
  *   - <link rel="canonical"> et <meta property="og:url"> dans chaque page ;
  *   - og:image en URL absolue ;
  *   - sitemap.xml ;
@@ -25,30 +29,58 @@
 
 import { readdir, readFile, writeFile } from "node:fs/promises";
 
-const base = process.argv[2]?.replace(/\/+$/, "");
-if (!base || !/^https?:\/\//.test(base)) {
-  console.error("Usage : node tools/finalize-urls.mjs <url-publique>");
+import { CHEMIN_CONFIG_SITE, ecrireBaseUrl, normaliserBase, urlPage, urlRessource } from "./site-config.mjs";
+
+const base = normaliserBase(process.argv[2]);
+if (!base) {
+  console.error("Usage : node tools/finalize-urls.mjs <url-publique>   (http ou https, sans paramètre ni fragment)");
   process.exit(1);
 }
 
 // L'accueil en tête, le reste par ordre alphabétique : c'est aussi l'ordre
-// dans lequel le sitemap sera écrit.
-const pages = (await readdir("."))
+// dans lequel le sitemap sera écrit. Les pages de reportage, générées dans
+// « reportages/ » par build-reportages.mjs, suivent.
+const pagesHtml = async (dossier) => (await readdir(dossier || ".").catch(() => []))
   .filter((name) => name.endsWith(".html") && !name.startsWith("__"))
-  .sort((a, b) => (a === "index.html" ? -1 : b === "index.html" ? 1 : a.localeCompare(b)));
+  .map((name) => (dossier ? `${dossier}/${name}` : name));
+
+const pages = [
+  ...(await pagesHtml(""))
+    .sort((a, b) => (a === "index.html" ? -1 : b === "index.html" ? 1 : a.localeCompare(b))),
+  ...(await pagesHtml("reportages")).sort(),
+];
 
 /** Insère ou remplace une balise, en conservant l'ordre du <head>. */
 function upsert(html, pattern, replacement, anchor) {
   if (pattern.test(html)) return html.replace(pattern, replacement);
-  return html.replace(anchor, `${anchor}\n${replacement}`);
+  return html.replace(anchor, (trouve) => `${trouve}\n${replacement}`);
+}
+
+/**
+ * Rend og:image absolue. La valeur peut être :
+ *   - relative à la page (état initial) : résolue contre l'URL de la page ;
+ *   - déjà absolue, écrite par une exécution précédente sous une autre base :
+ *     la base précédente est déduite du lien canonique, puis remplacée.
+ * Le chemin propre à chaque page (visuel de partage d'un reportage) est donc
+ * conservé, et relancer le script ne peut pas empiler les segments d'URL.
+ */
+function ogImageAbsolue(valeur, urlPage, ancienCanonique, ancienChemin) {
+  if (!/^https?:\/\//.test(valeur)) return new URL(valeur, urlPage).href;
+  if (ancienCanonique) {
+    const ancienneBase = ancienCanonique.slice(0, ancienCanonique.length - ancienChemin.length);
+    if (ancienneBase && valeur.startsWith(ancienneBase)) return urlRessource(base, valeur.slice(ancienneBase.length));
+  }
+  return valeur;
 }
 
 const today = new Date().toISOString().slice(0, 10);
 const entries = [];
 
 for (const page of pages) {
-  const url = page === "index.html" ? `${base}/` : `${base}/${page}`;
+  const url = urlPage(base, page);
   let html = await readFile(page, "utf8");
+  const ancienCanonique = html.match(/<link rel="canonical" href="([^"]*)">/)?.[1] ?? null;
+  const ancienChemin = page === "index.html" ? "" : page;
 
   html = upsert(
     html,
@@ -60,13 +92,11 @@ for (const page of pages) {
     html,
     /<meta property="og:url"[^>]*>/,
     `<meta property="og:url" content="${url}">`,
-    '<meta property="og:type" content="website">'
+    /<meta property="og:type" content="[^"]*">/
   );
-  // Remplacement de la valeur entière plutôt que préfixage : relancer le
-  // script ne peut donc pas empiler les segments d'URL.
   html = html.replace(
-    /(<meta property="og:image" content=")[^"]*(">)/,
-    `$1${base}/assets/img/og-cover.png$2`
+    /(<meta property="og:image" content=")([^"]*)(">)/,
+    (_, avant, valeur, apres) => `${avant}${ogImageAbsolue(valeur, url, ancienCanonique, ancienChemin)}${apres}`
   );
 
   // La page 404 porte une <base> écrite en dur : GitHub Pages la sert pour
@@ -82,6 +112,10 @@ for (const page of pages) {
   if (page !== "404.html") entries.push(url);
   console.log(`mis à jour : ${page}`);
 }
+
+// L'adresse est mémorisée avant toute régénération ultérieure des reportages.
+await ecrireBaseUrl(base);
+console.log(`écrit : ${CHEMIN_CONFIG_SITE}`);
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

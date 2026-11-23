@@ -33,12 +33,15 @@ export function initReveal(root = document) {
   const observer = new IntersectionObserver(
     (entries, obs) => {
       for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
+        // Un élément déjà dépassé (saut par ancre, défilement rapide) est
+        // révélé aussi : rien ne reste masqué au-dessus du lecteur.
+        const depasse = !entry.isIntersecting && entry.boundingClientRect.bottom <= 0;
+        if (!entry.isIntersecting && !depasse) continue;
         entry.target.classList.add("is-revealed");
         obs.unobserve(entry.target);
       }
     },
-    { rootMargin: "0px 0px -10% 0px", threshold: 0.15 }
+    { rootMargin: "0px 0px -8% 0px", threshold: 0.1 }
   );
 
   // Ce qui était déjà visible au chargement a été révélé par le court script

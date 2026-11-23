@@ -40,7 +40,7 @@ const serveur = BASE_EXTERNE
   ? null
   : (await lancerServeur({ port: PORT_HTTP, prefix: SOUS_CHEMIN })).serveur;
 const BASE = BASE_EXTERNE ?? `http://127.0.0.1:${PORT_HTTP}${SOUS_CHEMIN}`;
-const PAGES = ["index.html", "portfolio.html", "evenements.html", "a-propos.html", "contact.html"];
+const PAGES = ["index.html", "portfolio.html", "evenements.html", "a-propos.html", "contact.html", "reportages/florent.html"];
 
 const CHROME = [
   process.env.CHROME_PATH,
@@ -176,16 +176,16 @@ try {
 
 const colonne = (v, n) => String(v).padStart(n);
 console.log("\nMobile 390×844 · CPU ×4 · 1,6 Mb/s · RTT 150 ms · serveur local, cache vidé\n");
-console.log("page                 FCP      LCP      CLS   requêtes    poids");
-console.log("-".repeat(64));
+console.log("page                       FCP      LCP      CLS   requêtes    poids");
+console.log("-".repeat(70));
 for (const l of lignes) {
   console.log(
-    `${l.page.padEnd(18)} ${colonne(l.fcp + " ms", 7)} ${colonne(l.lcp + " ms", 8)} ${colonne(l.cls, 8)} ${colonne(l.requetes, 10)} ${colonne(l.ko + " Ko", 8)}`
+    `${l.page.padEnd(24)} ${colonne(l.fcp + " ms", 7)} ${colonne(l.lcp + " ms", 8)} ${colonne(l.cls, 8)} ${colonne(l.requetes, 10)} ${colonne(l.ko + " Ko", 8)}`
   );
 }
 const pireLcp = Math.max(...lignes.map((l) => l.lcp));
 const pireCls = Math.max(...lignes.map((l) => l.cls));
-console.log("-".repeat(64));
+console.log("-".repeat(70));
 console.log(`LCP le plus élevé : ${pireLcp} ms (cible ≤ 2500 ms) — ${pireLcp <= 2500 ? "atteinte" : "NON atteinte"}`);
 console.log(`CLS le plus élevé : ${pireCls} (cible ≤ 0,1) — ${pireCls <= 0.1 ? "atteinte" : "NON atteinte"}`);
 console.log("INP non mesuré : il requiert des interactions réelles d'utilisateurs.");
