@@ -23,13 +23,16 @@
 
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { cp, mkdtemp, readFile, rm } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { connect } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
 import { lancerServeur } from "./serve.mjs";
+import {
+  DOSSIER_IMAGES, cheminManifeste, mentionneDossierExclu, ordrePhotos, validerManifeste, validerReportage,
+} from "./reportages-lib.mjs";
 
 const PORT = 9333;       // protocole DevTools
 const PORT_HTTP = 8129;  // serveur statique lancé par ce script
@@ -44,7 +47,10 @@ const SOUS_CHEMIN = "/ange-kevin-photographie";
 const BASE_EXTERNE = process.argv.find((a) => a.startsWith("--base="))?.slice(7);
 const BASE = BASE_EXTERNE ?? `http://127.0.0.1:${PORT_HTTP}${SOUS_CHEMIN}`;
 
-const PAGES = ["index.html", "portfolio.html", "evenements.html", "a-propos.html", "contact.html", "404.html"];
+/** Page de reportage de référence, générée par tools/build-reportages.mjs. */
+const REPORTAGE = "reportages/florent.html";
+
+const PAGES = ["index.html", "portfolio.html", "evenements.html", "a-propos.html", "contact.html", "404.html", REPORTAGE];
 
 /** Largeurs de référence du cahier des charges, du petit mobile au grand écran. */
 const WIDTHS = [320, 360, 390, 430, 768, 1024, 1440, 1920];
@@ -135,6 +141,109 @@ class Devtools {
     anomalies.length === 0, anomalies.join(" ; "));
 }
 
+// --- 0 bis. Reportages : données, pages générées, images -----------------
+// Vérifié sans navigateur : ces contrôles portent sur les fichiers.
+const executerNode = (script, args) => new Promise((resoudre) => {
+  const proc = spawn(process.execPath, [script, ...args], { stdio: ["ignore", "pipe", "pipe"] });
+  let sortie = "";
+  proc.stdout.on("data", (d) => (sortie += d));
+  proc.stderr.on("data", (d) => (sortie += d));
+  proc.once("exit", (code) => resoudre({ code, sortie }));
+});
+{
+  const florent = JSON.parse(await readFile(join("content", "reportages", "florent.json"), "utf8"));
+
+  record("Reportages — les données de Florent sont valides",
+    validerReportage(florent, "florent.json").length === 0,
+    validerReportage(florent, "florent.json").join(" ; "));
+
+  const ordre = ordrePhotos(florent);
+  record("Reportages — Florent : 25 photographies, chacune affichée une fois, couverture comprise",
+    florent.photos.length === 25 && ordre.length === 25 && new Set(ordre).size === 25,
+    `${florent.photos.length} déclarées, ${ordre.length} affichées, ${new Set(ordre).size} distinctes`);
+
+  // Le validateur doit refuser chaque défaut, avec un message qui le nomme.
+  const muter = (modifier) => { const copie = structuredClone(florent); modifier(copie); return validerReportage(copie, "essai"); };
+  const CAS_INVALIDES = [
+    ["texte alternatif manquant", (r) => { delete r.photos[3].alt; }, /alt/],
+    ["photographie affichée deux fois", (r) => { r.chapters[0].frames[1].photos = ["dsc-0009"]; }, /utilisée 2 fois/],
+    ["photographie déclarée mais jamais affichée", (r) => { r.chapters[5].frames.pop(); }, /jamais affichée/],
+    ["identifiant inconnu dans un plan", (r) => { r.chapters[0].frames[0].photos = ["dsc-9999"]; }, /inconnue/],
+    ["fichier pris dans le dossier FAMILLE", (r) => { r.photos[0].file = "FAMILLE/DSC_0148.jpg"; }, /sans dossier/],
+    ["chemin remontant d'un dossier", (r) => { r.photos[0].file = "../DSC_0148.jpg"; }, /sans dossier/],
+    ["diptyque à une seule image", (r) => { r.chapters[1].frames[0].photos.pop(); }, /attend 2/],
+    ["composition inconnue", (r) => { r.chapters[0].frames[0].layout = "mosaique"; }, /layout/],
+    ["catégorie inconnue", (r) => { r.category = "divers"; }, /category/],
+    ["description trop longue pour le référencement", (r) => { r.description = "x".repeat(200); }, /description/],
+  ];
+  const nonDetectes = CAS_INVALIDES
+    .filter(([, modifier, attendu]) => !muter(modifier).some((m) => attendu.test(m)))
+    .map(([nom]) => nom);
+  record(`Reportages — le validateur refuse les données invalides (${CAS_INVALIDES.length} cas)`,
+    nonDetectes.length === 0, nonDetectes.join(" ; "));
+
+  record("Reportages — les dossiers FAMILLE et INDIVIDUEL sont reconnus, quelle que soit la casse",
+    mentionneDossierExclu("E:/PHOTO/FAMILLE") && mentionneDossierExclu("F:\\x\\Individuel\\")
+      && !mentionneDossierExclu("D:/Photos/FINALE FLORENT 7 DECEMBRE/ANOTHER"));
+
+  // optimize-photos.mjs doit refuser un dossier source exclu, avant toute lecture.
+  const refus = await executerNode(join("tools", "optimize-photos.mjs"),
+    ["florent", "--source=E:/PHOTO/FAMILLE", "--dry-run"]);
+  record("Reportages — l'optimisation refuse un dossier source FAMILLE",
+    refus.code === 1 && refus.sortie.includes("FAMILLE"), `code ${refus.code}`);
+
+  // Les pages générées doivent correspondre aux données.
+  const generation = await executerNode(join("tools", "build-reportages.mjs"), ["--check"]);
+  record("Reportages — pages générées à jour (build-reportages.mjs --check)",
+    generation.code === 0, generation.sortie.trim());
+
+  // Sécurité et non-régression des outils : injections HTML, slug, fraîcheur
+  // des images, SEO, intégrité de la feuille de style (sans navigateur).
+  const securite = await executerNode(join("tools", "test-reportages.mjs"), []);
+  record("Reportages — tests de sécurité et de non-régression (tools/test-reportages.mjs)",
+    securite.code === 0,
+    securite.sortie.split("\n").filter((l) => /^ECHEC/.test(l)).join(" | ").slice(0, 700) || `code ${securite.code}`);
+
+  // Manifeste et fichiers optimisés.
+  const manifeste = JSON.parse(await readFile(cheminManifeste("florent"), "utf8").catch(() => "null"));
+  record("Reportages — manifeste des images cohérent avec les données",
+    validerManifeste(florent, manifeste, "manifest.json").length === 0,
+    validerManifeste(florent, manifeste, "manifest.json").join(" ; "));
+
+  const defautsFichiers = [];
+  const attendus = new Set(["manifest.json"]);
+  for (const [id, entree] of Object.entries(manifeste?.photos ?? {})) {
+    const fichiers = [...entree.variants.map((v) => ({ ...v, format: "webp" }))];
+    if (entree.og) fichiers.push({ ...entree.og, format: "jpg" });
+    for (const v of fichiers) {
+      attendus.add(v.file);
+      const octets = await readFile(join(DOSSIER_IMAGES, "florent", v.file)).catch(() => null);
+      if (!octets) { defautsFichiers.push(`${v.file} absent`); continue; }
+      const signature = v.format === "webp"
+        ? octets.subarray(0, 4).toString() === "RIFF" && octets.subarray(8, 12).toString() === "WEBP"
+        : octets[0] === 0xff && octets[1] === 0xd8;
+      if (!signature) defautsFichiers.push(`${v.file} : format inattendu`);
+      // Aucun recadrage : chaque déclinaison garde le rapport de l'original.
+      if (Math.abs(v.width / v.height - entree.width / entree.height) > 0.01) {
+        defautsFichiers.push(`${v.file} : proportions modifiées`);
+      }
+      // Aucune métadonnée d'appareil ni de localisation publiée.
+      if (/Exif|NIKON|GPS/.test(octets.subarray(0, 4096).toString("latin1"))) {
+        defautsFichiers.push(`${v.file} : métadonnées EXIF présentes`);
+      }
+    }
+    if (entree.variants.at(-1).width > 2400) defautsFichiers.push(`${id} : déclinaison de plus de 2400 px`);
+  }
+  const presents = await readdir(join(DOSSIER_IMAGES, "florent")).catch(() => []);
+  for (const nom of presents) if (!attendus.has(nom)) defautsFichiers.push(`${nom} : fichier orphelin`);
+  record("Reportages — images web présentes, au bon format, non recadrées, sans EXIF ni orphelin",
+    defautsFichiers.length === 0, defautsFichiers.join(" ; "));
+
+  const html = await readFile(REPORTAGE, "utf8");
+  record("Reportages — aucun fichier original ni dossier exclu référencé par la page",
+    !/DSC_\d+\.jpg|FAMILLE|INDIVIDUEL/i.test(html));
+}
+
 // --- 0 bis. Serveur statique, aux conditions de GitHub Pages --------------
 const serveur = BASE_EXTERNE
   ? null
@@ -211,7 +320,21 @@ try {
   await cdp.send("Emulation.setFocusEmulationEnabled", { enabled: true });
   await cdp.send("Network.enable");
 
+  // Erreurs JavaScript : relevées pendant toute l'exécution, sur toutes les
+  // pages et à toutes les largeurs. Les scénarios dégradés volontaires
+  // (modules bloqués, données invalides) ne doivent pas en produire non plus :
+  // le code les traite sans lever d'exception.
+  const erreursJs = [];
+  let urlCourante = "";
+  cdp.on("Runtime.exceptionThrown", ({ exceptionDetails }) => {
+    erreursJs.push(`${urlCourante} : ${exceptionDetails.exception?.description ?? exceptionDetails.text}`);
+  });
+  cdp.on("Runtime.consoleAPICalled", ({ type, args }) => {
+    if (type === "error") erreursJs.push(`${urlCourante} : console.error ${args.map((a) => a.value ?? a.description).join(" ")}`);
+  });
+
   const visitUrl = async (url, { width = 390, height = 844, mobile = true, reducedMotion = false, attente = 500 } = {}) => {
+    urlCourante = url.replace(BASE, "");
     await cdp.send("Emulation.setDeviceMetricsOverride", {
       width, height, deviceScaleFactor: 1, mobile,
     });
@@ -390,8 +513,7 @@ try {
   await cdp.send("Emulation.setScriptExecutionDisabled", { value: false });
 
   // --- 3 bis. Contrastes WCAG, réellement calculés -------------------------
-  await visit("index.html", { width: 1440, height: 900, mobile: false });
-  const contrastes = await cdp.evaluate(`
+  const mesurerContrastes = (cibles) => cdp.evaluate(`
     (() => {
       const canal = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
       const luminance = ([r, g, b]) => 0.2126 * canal(r) + 0.7152 * canal(g) + 0.0722 * canal(b);
@@ -403,8 +525,7 @@ try {
         }
         return [0, 0, 0];
       };
-      const cibles = [".lead", ".eyebrow", ".plate__caption", ".nav__list a", ".section__note",
-                      ".site-footer__legal p", ".link", ".prose p", ".pending", ".strip__hint"];
+      const cibles = ${JSON.stringify(cibles)};
       const releve = [];
       for (const selecteur of cibles) {
         const el = document.querySelector(selecteur);
@@ -417,9 +538,20 @@ try {
       }
       return releve;
     })()`);
-  const pire = contrastes.reduce((min, c) => (c.ratio < min.ratio ? c : min), { ratio: 99, selecteur: "—" });
+  const plusFaible = (releve) => releve.reduce((min, c) => (c.ratio < min.ratio ? c : min), { ratio: 99, selecteur: "—" });
+
+  await visit("index.html", { width: 1440, height: 900, mobile: false });
+  const pire = plusFaible(await mesurerContrastes([".lead", ".eyebrow", ".plate__caption", ".nav__list a",
+    ".section__note", ".site-footer__legal p", ".link", ".prose p", ".pending", ".strip__hint"]));
   record(`Contraste — texte courant ≥ 4,5:1 (minimum relevé ${pire.ratio}:1 sur ${pire.selecteur})`,
     pire.ratio >= 4.5);
+
+  await visit(REPORTAGE, { width: 1440, height: 900, mobile: false });
+  const pireReportage = plusFaible(await mesurerContrastes([".story-crumb", ".story-meta dt", ".story-meta dd",
+    ".story-hero__subtitle", ".story-intro__text p", ".story-chapter__text", ".story-note", ".plate__ref",
+    ".plate__caption b", ".rail a", ".rail__num", ".eyebrow", ".link"]));
+  record(`Contraste — reportage ≥ 4,5:1 (minimum relevé ${pireReportage.ratio}:1 sur ${pireReportage.selecteur})`,
+    pireReportage.ratio >= 4.5);
 
   // --- 4. Révélation au défilement ----------------------------------------
   await visit("index.html", { width: 1440, height: 900, mobile: false });
@@ -451,6 +583,341 @@ try {
       return active ? active.getAttribute("href") : null;
     })()`);
   record("Portfolio — le rail suit la section lue", railActive === "#ceremonies", String(railActive));
+
+  // La carte du reportage : un seul lien annoncé, mais toute la carte cliquable.
+  const carteRep = await cdp.evaluate(`
+    (async () => {
+      const carte = document.querySelector(".reportage-card");
+      if (!carte) return { absente: true };
+      carte.scrollIntoView({ block: "center" });
+      await new Promise((r) => setTimeout(r, 600));
+      const r = carte.querySelector("img").getBoundingClientRect();
+      const dessus = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return { href: dessus?.closest("a")?.getAttribute("href") ?? null, liens: carte.querySelectorAll("a[href]").length };
+    })()`);
+  record("Portfolio — la carte du reportage est cliquable en entier, avec un seul lien",
+    carteRep.href === REPORTAGE && carteRep.liens === 1, JSON.stringify(carteRep));
+
+  // --- 5 bis. Reportage : chargement, lecture, sommaire --------------------
+  await visit(REPORTAGE, { width: 1440, height: 900, mobile: false, attente: 600 });
+  const chargementRep = await cdp.evaluate(`
+    (() => {
+      const images = [...document.querySelectorAll("main img")];
+      const couverture = document.querySelector(".story-hero img");
+      return {
+        nombre: images.length,
+        couverturePrioritaire: couverture?.getAttribute("fetchpriority") === "high" && !couverture.hasAttribute("loading"),
+        nonDifferees: images.filter((i) => i !== couverture && i.getAttribute("loading") !== "lazy").length,
+        sansSrcset: images.filter((i) => !i.getAttribute("srcset") || !i.getAttribute("sizes")).length,
+        sansAlt: images.filter((i) => !(i.getAttribute("alt") ?? "").trim()).length,
+        chapitres: document.querySelectorAll(".story-chapter").length,
+        liensSommaire: document.querySelectorAll("[data-rail] a[href^='#']").length,
+      };
+    })()`);
+  record("Reportage — 25 photographies : couverture prioritaire, toutes les autres en chargement différé",
+    chargementRep.nombre === 25 && chargementRep.couverturePrioritaire && chargementRep.nonDifferees === 0,
+    JSON.stringify(chargementRep));
+  record("Reportage — chaque photographie a srcset, sizes et un texte alternatif",
+    chargementRep.sansSrcset === 0 && chargementRep.sansAlt === 0, JSON.stringify(chargementRep));
+  record("Reportage — le sommaire couvre l'introduction et chaque chapitre",
+    chargementRep.chapitres === 6 && chargementRep.liensSommaire === 7, JSON.stringify(chargementRep));
+
+  // Parcours complet : tout est révélé, chargé, jamais rogné ni déformé, et
+  // aucune image ne dépasse la hauteur de la fenêtre. Mesures de mise en page
+  // (offsetWidth / offsetHeight) : insensibles aux transformations de révélation.
+  const PARCOURS_REPORTAGE = `
+    (async () => {
+      const root = document.documentElement;
+      root.style.scrollBehavior = "auto";
+      for (let y = 0; y < root.scrollHeight; y += innerHeight * 0.6) {
+        scrollTo(0, y);
+        await new Promise((r) => setTimeout(r, 160));
+      }
+      await new Promise((r) => setTimeout(r, 600));
+      await Promise.all([...document.images].map((i) => i.complete ? 0
+        : new Promise((r) => { i.addEventListener("load", r); i.addEventListener("error", r); })));
+      const defauts = [];
+      for (const fig of document.querySelectorAll(".story-photo")) {
+        const img = fig.querySelector("img"), cadre = fig.querySelector(".plate__frame");
+        const nom = img.currentSrc.split("/").pop();
+        if (img.offsetHeight - cadre.clientHeight > 1 || Math.abs(img.offsetWidth - cadre.clientWidth) > 1) defauts.push(nom + " rognée");
+        if (Math.abs(img.offsetWidth / img.offsetHeight - img.naturalWidth / img.naturalHeight) > 0.02) defauts.push(nom + " déformée");
+        if (img.offsetHeight > innerHeight * 0.92 + 1) defauts.push(nom + " plus haute que la fenêtre (" + img.offsetHeight + "px)");
+      }
+      return {
+        nonRevelees: [...document.querySelectorAll("[data-reveal]")].filter((e) => !e.classList.contains("is-revealed")).length,
+        nonChargees: [...document.images].filter((i) => !(i.complete && i.naturalWidth > 0)).map((i) => i.src.split("/").pop()),
+        defauts,
+      };
+    })()`;
+  for (const [width, height, mobile] of [[390, 844, true], [1440, 900, false], [1024, 640, false]]) {
+    await visit(REPORTAGE, { width, height, mobile, attente: 400 });
+    const p = await cdp.evaluate(PARCOURS_REPORTAGE);
+    record(`Reportage @${width}×${height} — tout est révélé et chargé après lecture`,
+      p.nonRevelees === 0 && p.nonChargees.length === 0,
+      `${p.nonRevelees} non révélé(s) ; non chargées : ${p.nonChargees.join(", ")}`);
+    record(`Reportage @${width}×${height} — aucune image rognée, déformée ou plus haute que la fenêtre`,
+      p.defauts.length === 0, p.defauts.join(" ; "));
+  }
+
+  // Le sommaire suit la lecture.
+  await visit(REPORTAGE, { width: 1440, height: 900, mobile: false });
+  const chapitreActif = await cdp.evaluate(`
+    (async () => {
+      document.documentElement.style.scrollBehavior = "auto";
+      const cible = document.getElementById("chapitre-les-voix");
+      scrollTo(0, cible.getBoundingClientRect().top + scrollY + 40);
+      await new Promise((r) => setTimeout(r, 700));
+      return document.querySelector("[data-rail] a[aria-current]")?.getAttribute("href") ?? null;
+    })()`);
+  record("Reportage — le sommaire suit le chapitre lu", chapitreActif === "#chapitre-les-voix", String(chapitreActif));
+
+  // Le mouvement doit être réellement perceptible : à l'entrée d'un chapitre,
+  // le titre est observé en cours de transition (ni masqué, ni déjà achevé),
+  // puis entièrement visible. Un test « tout est révélé à la fin » ne prouve
+  // pas qu'un visiteur voit quoi que ce soit bouger.
+  await visit(REPORTAGE, { width: 1440, height: 900, mobile: false });
+  const mouvement = await cdp.evaluate(`
+    (async () => {
+      document.documentElement.style.scrollBehavior = "auto";
+      const titre = document.getElementById("t-chapitre-les-tenues");
+      scrollTo(0, titre.getBoundingClientRect().top + scrollY - innerHeight * 0.55);
+      const lire = () => ({ o: Number(getComputedStyle(titre).opacity), t: getComputedStyle(titre).transform });
+      await new Promise((r) => setTimeout(r, 250));
+      const milieu = lire();
+      await new Promise((r) => setTimeout(r, 1500));
+      const fin = lire();
+      const section = document.getElementById("chapitre-les-tenues");
+      return { milieu, fin, courant: section.hasAttribute("data-current") };
+    })()`);
+  record("Reportage — l'entrée d'un chapitre s'anime de façon perceptible, puis tout est visible",
+    mouvement.milieu.o > 0.02 && mouvement.milieu.o < 0.98 && mouvement.milieu.t !== "none" && mouvement.fin.o === 1 && mouvement.fin.t === "none" && mouvement.courant,
+    JSON.stringify(mouvement));
+
+  // Intégrité visuelle : une photographie reste entière et fidèle au fichier
+  // optimisé à chaque instant — animation d'entrée, révélation au défilement,
+  // survol. Ni filtre, ni transformation, ni rognage sur l'image ; le cadre et
+  // la figure ne rognent pas non plus (clip-path, filtre). Seuls des fondus et
+  // glissements de conteneur sont admis, et ils ne changent pas la taille.
+  const VERIFIER_IMAGE = `
+    const defauts = [];
+    const verifier = (img, quand) => {
+      const nom = img.currentSrc.split("/").pop() || img.getAttribute("src");
+      const lot = [["image", img], ["cadre", img.closest(".plate__frame")], ["figure", img.closest(".plate")]];
+      for (const [role, el] of lot) {
+        if (!el) continue;
+        const s = getComputedStyle(el);
+        if (s.filter !== "none") defauts.push(quand + " : " + nom + " — filtre sur " + role + " (" + s.filter + ")");
+        if (s.clipPath !== "none") defauts.push(quand + " : " + nom + " — rognage sur " + role + " (" + s.clipPath + ")");
+        if (role === "image" && s.transform !== "none") defauts.push(quand + " : " + nom + " — transformation de l'image (" + s.transform + ")");
+        if (role === "image" && (s.objectFit !== "fill" || s.objectPosition !== "50% 50%")) defauts.push(quand + " : " + nom + " — object-fit " + s.objectFit);
+      }
+      const cadre = img.closest(".plate__frame");
+      if (cadre && (img.offsetHeight - cadre.clientHeight > 1 || Math.abs(img.offsetWidth - cadre.clientWidth) > 1)) {
+        defauts.push(quand + " : " + nom + " — image rognée par son cadre");
+      }
+    };`;
+
+  await visit(REPORTAGE, { width: 1440, height: 900, mobile: false, attente: 1500 });
+  const integriteAnimation = await cdp.evaluate(`
+    (async () => {
+      ${VERIFIER_IMAGE}
+      const cadre = document.querySelector(".story-hero__plate .plate__frame");
+      const img = cadre.querySelector("img");
+      const animations = cadre.getAnimations();
+      if (animations.length === 0) defauts.push("aucune animation d'entrée sur la couverture : test sans objet");
+      const largeur = img.getBoundingClientRect().width;
+      for (const animation of animations) {
+        animation.pause();
+        const duree = animation.effect.getComputedTiming().duration;
+        for (const t of [0, duree * 0.25, duree * 0.5, duree * 0.75, duree]) {
+          animation.currentTime = t;
+          verifier(img, "entrée de la couverture à " + Math.round(t) + " ms");
+          if (Math.abs(img.getBoundingClientRect().width - largeur) > 0.5) defauts.push("la couverture change de taille à " + Math.round(t) + " ms");
+        }
+        animation.finish();
+      }
+      // Révélation : photographies pas encore révélées, puis en cours de révélation.
+      const attente = [...document.querySelectorAll(".story-photo[data-reveal]:not(.is-revealed)")];
+      for (const fig of attente) verifier(fig.querySelector("img"), "avant révélation");
+      document.documentElement.style.scrollBehavior = "auto";
+      const cible = attente[0];
+      scrollTo(0, cible.getBoundingClientRect().top + scrollY - innerHeight * 0.5);
+      for (const delai of [60, 200, 400, 900]) {
+        await new Promise((r) => setTimeout(r, delai));
+        verifier(cible.querySelector("img"), "révélation à +" + delai + " ms");
+      }
+      return { defauts: defauts.slice(0, 8), animations: animations.length, observees: attente.length };
+    })()`);
+  record("Reportage — les photographies restent entières et fidèles pendant l'animation d'entrée et la révélation",
+    integriteAnimation.defauts.length === 0 && integriteAnimation.animations > 0 && integriteAnimation.observees > 5,
+    JSON.stringify(integriteAnimation));
+
+  // Survol : la taille et le rendu de l'image ne bougent pas.
+  const survolReportage = async (url, selecteurImage, nom) => {
+    await visit(url, { width: 1440, height: 900, mobile: false, attente: 600 });
+    const avant = await cdp.evaluate(`
+      (async () => {
+        document.documentElement.style.scrollBehavior = "auto";
+        const img = document.querySelector(${JSON.stringify(selecteurImage)});
+        scrollTo(0, img.getBoundingClientRect().top + scrollY - innerHeight * 0.3);
+        await new Promise((r) => setTimeout(r, 1200));
+        const r = img.getBoundingClientRect();
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2, w: r.width, h: r.height };
+      })()`);
+    await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: avant.x, y: avant.y });
+    await sleep(900); // plus long que toute transition du site
+    const apres = await cdp.evaluate(`
+      (() => {
+        ${VERIFIER_IMAGE}
+        const img = document.querySelector(${JSON.stringify(selecteurImage)});
+        verifier(img, ${JSON.stringify(nom)});
+        const r = img.getBoundingClientRect();
+        // Sur la carte du portfolio, le lien étiré recouvre l'image : c'est la carte qui est survolée.
+        return { survol: (img.closest(".reportage-card, .plate") ?? img).matches(":hover"), defauts, w: r.width, h: r.height };
+      })()`);
+    await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: 1, y: 1 });
+    const taille = Math.abs(apres.w - avant.w) < 0.5 && Math.abs(apres.h - avant.h) < 0.5;
+    record(`Survol — ${nom} : l'image ne change ni de taille, ni de rendu`,
+      apres.survol && taille && apres.defauts.length === 0, JSON.stringify({ avant, apres }));
+  };
+  await survolReportage(REPORTAGE, ".story-frame--gauche img", "photographie du reportage");
+  await survolReportage("portfolio.html", ".reportage-card__media img", "couverture de la carte du portfolio");
+
+  // En mobile, le sommaire défile horizontalement : l'entrée active doit y
+  // être ramenée dans la partie visible, sinon elle reste hors champ.
+  await visit(REPORTAGE, { width: 390, height: 844 });
+  const actifVisible = await cdp.evaluate(`
+    (async () => {
+      document.documentElement.style.scrollBehavior = "auto";
+      const cible = document.getElementById("chapitre-le-gateau");
+      scrollTo(0, cible.getBoundingClientRect().top + scrollY + 40);
+      await new Promise((r) => setTimeout(r, 1200));
+      const lien = document.querySelector("[data-rail] a[aria-current]");
+      if (!lien) return "aucune entrée active";
+      const liste = lien.closest("ol").getBoundingClientRect(), r = lien.getBoundingClientRect();
+      return lien.getAttribute("href") === "#chapitre-le-gateau" && r.left >= liste.left - 1 && r.right <= liste.right + 1
+        ? "" : lien.getAttribute("href") + " hors champ (" + Math.round(r.left) + "–" + Math.round(r.right) + " pour " + Math.round(liste.left) + "–" + Math.round(liste.right) + ")";
+    })()`);
+  record("Reportage — en mobile, l'entrée active du sommaire est ramenée dans le champ",
+    actifVisible === "", actifVisible);
+
+  // Clavier : un lien du sommaire activé par Entrée mène au chapitre, dont le
+  // titre n'est masqué ni par l'entête ni par le sommaire collant.
+  for (const [width, height, mobile] of [[1440, 900, false], [390, 844, true]]) {
+    await visit(REPORTAGE, { width, height, mobile });
+    await cdp.evaluate(`(document.documentElement.style.scrollBehavior = "auto",
+      document.querySelector('[data-rail] a[href="#chapitre-le-gateau"]').focus(), 1)`);
+    await cdp.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
+    await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
+    await sleep(600);
+    const arrivee = await cdp.evaluate(`
+      (() => {
+        const titre = document.getElementById("t-chapitre-le-gateau").getBoundingClientRect();
+        const rail = document.querySelector(".rail").getBoundingClientRect();
+        const entete = document.querySelector(".site-header").getBoundingClientRect();
+        return {
+          hash: location.hash,
+          titre: Math.round(titre.top),
+          dessous: Math.round(Math.max(rail.bottom, entete.bottom)),
+          visible: titre.top >= Math.max(rail.bottom, entete.bottom) - 1 && titre.top < innerHeight,
+        };
+      })()`);
+    record(`Reportage @${width}px — le sommaire est utilisable au clavier, le chapitre visé reste visible`,
+      arrivee.hash === "#chapitre-le-gateau" && arrivee.visible, JSON.stringify(arrivee));
+  }
+
+  // Mouvement réduit : rien de masqué, aucune animation liée au défilement.
+  await visit(REPORTAGE, { width: 390, height: 844, reducedMotion: true });
+  const reduitRep = await cdp.evaluate(`
+    (() => ({
+      masques: [...document.querySelectorAll("[data-reveal], [data-intro]")]
+        .filter((el) => Number(getComputedStyle(el).opacity) < 0.99).length,
+      animees: [...document.querySelectorAll(".story-frame--pleine img")]
+        .filter((img) => getComputedStyle(img).animationName !== "none").length,
+    }))()`);
+  record("Reportage — mouvement réduit : aucun contenu masqué, aucune animation au défilement",
+    reduitRep.masques === 0 && reduitRep.animees === 0, JSON.stringify(reduitRep));
+
+  // Sans JavaScript : le récit complet reste lisible, images comprises.
+  await cdp.send("Emulation.setScriptExecutionDisabled", { value: true });
+  await visit(REPORTAGE, { width: 390, height: 844 });
+  const sansJsRep = await cdp.evaluate(`
+    (() => ({
+      masques: [...document.querySelectorAll("[data-reveal], [data-intro]")].filter((el) => {
+        const s = getComputedStyle(el);
+        return Number(s.opacity) < 0.99 || (el.dataset.reveal === "wipe" && (s.clipPath !== "none" || s.transform !== "none"));
+      }).length,
+      paragraphes: document.querySelectorAll(".story-intro__text p, .story-chapter__text p").length,
+      navigation: getComputedStyle(document.querySelector(".nav")).display !== "none",
+    }))()`);
+  record("Reportage — sans JavaScript : texte, images et navigation restent accessibles",
+    sansJsRep.masques === 0 && sansJsRep.paragraphes > 10 && sansJsRep.navigation, JSON.stringify(sansJsRep));
+  await cdp.send("Emulation.setScriptExecutionDisabled", { value: false });
+
+  // « sizes » : la valeur déclarée n'est jamais inférieure à la largeur
+  // rendue, pour aucune image du reportage ni de la carte du portfolio.
+  // Les valeurs contiennent des virgules à l'intérieur de min() : le
+  // découpage tient compte des parenthèses.
+  const MESURE_SIZES_TOUTES = `
+    (() => {
+      const decouper = (texte) => {
+        const morceaux = []; let profondeur = 0, courant = "";
+        for (const c of texte) {
+          if (c === "(") profondeur++;
+          if (c === ")") profondeur--;
+          if (c === "," && profondeur === 0) { morceaux.push(courant.trim()); courant = ""; } else courant += c;
+        }
+        morceaux.push(courant.trim());
+        return morceaux;
+      };
+      const sonde = document.createElement("div");
+      sonde.style.cssText = "position:absolute;visibility:hidden;height:0;top:0;left:0";
+      document.body.append(sonde);
+      const resoudre = (sizes) => {
+        for (const morceau of decouper(sizes)) {
+          let condition = "", valeur = morceau;
+          if (morceau.startsWith("(")) {
+            let profondeur = 0, fin = 0;
+            for (let i = 0; i < morceau.length; i++) {
+              if (morceau[i] === "(") profondeur++;
+              if (morceau[i] === ")" && --profondeur === 0) { fin = i; break; }
+            }
+            condition = morceau.slice(0, fin + 1);
+            valeur = morceau.slice(fin + 1).trim();
+          }
+          if (condition && !matchMedia(condition).matches) continue;
+          sonde.style.width = "";
+          sonde.style.width = valeur;
+          return sonde.style.width ? sonde.getBoundingClientRect().width : null;
+        }
+        return null;
+      };
+      const releve = [...document.querySelectorAll("main img[sizes]")].map((img) => ({
+        nom: img.currentSrc.split("/").pop() || img.getAttribute("src").split("/").pop(),
+        declaree: resoudre(img.getAttribute("sizes")),
+        reelle: img.offsetWidth,
+      }));
+      sonde.remove();
+      return releve;
+    })()`;
+  const sousDeclareRep = [];
+  const surDeclareRep = [];
+  for (const file of [REPORTAGE, "portfolio.html"]) {
+    for (const [width, height] of [...WIDTHS.map((w) => [w, 900]), [1440, 640], [390, 640], [1920, 1200]]) {
+      await visit(file, { width, height, mobile: width < 768, attente: 250 });
+      for (const m of await cdp.evaluate(MESURE_SIZES_TOUTES)) {
+        const trace = `${file} @${width}×${height} ${m.nom} : déclaré ${Math.round(m.declaree)}px pour ${m.reelle}px`;
+        if (m.declaree === null) sousDeclareRep.push(`${trace} (sizes non résolu)`);
+        else if (m.declaree < m.reelle - 1) sousDeclareRep.push(trace);
+        else if (height === 900 && m.reelle > 0 && m.declaree > m.reelle * 1.4) surDeclareRep.push(trace);
+      }
+    }
+  }
+  record("Reportage — « sizes » n'est jamais inférieur à la largeur rendue (2 pages, 11 formats d'écran)",
+    sousDeclareRep.length === 0, sousDeclareRep.slice(0, 6).join(" ; "));
+  record("Reportage — « sizes » reste à moins de 40 % au-dessus de la largeur rendue",
+    surDeclareRep.length === 0, surDeclareRep.slice(0, 6).join(" ; "));
 
   // --- 6. Données d'événements --------------------------------------------
   await visit("evenements.html", { width: 1440, height: 900, mobile: false });
@@ -778,8 +1245,10 @@ try {
         && getComputedStyle(document.querySelector("[data-menu-open]")).display !== "none"`));
 
   // --- 6 quater. Taille des cibles (WCAG 2.2, Target Size Minimum) -------
-  await visit("index.html", { width: 390, height: 844 });
-  const cibles = await cdp.evaluate(`
+  const cibles = [];
+  for (const file of ["index.html", "portfolio.html", REPORTAGE]) {
+  await visit(file, { width: 390, height: 844 });
+  cibles.push(...(await cdp.evaluate(`
     [...document.querySelectorAll("a[href], button")]
       .filter((el) => {
         // Exception « inline » du critère 2.5.8 : un lien inséré dans une
@@ -791,8 +1260,9 @@ try {
       })
       .map((el) => ({ el, r: el.getBoundingClientRect() }))
       .filter(({ r }) => r.width > 0 && r.height > 0 && (r.height < 24 || r.width < 24))
-      .map(({ el }) => el.tagName.toLowerCase() + "." + (el.getAttribute("class") || "sans-classe"))`);
-  record("Cibles — toutes les commandes mesurent au moins 24 px",
+      .map(({ el }) => "${file} " + el.tagName.toLowerCase() + "." + (el.getAttribute("class") || "sans-classe"))`)));
+  }
+  record("Cibles — toutes les commandes mesurent au moins 24 px (accueil, portfolio, reportage)",
     cibles.length === 0, cibles.join(", "));
 
   // --- 7. Balayage responsive sur les largeurs de référence ----------------
@@ -908,12 +1378,23 @@ try {
         };
       })()`);
 
+    // Un reportage est un article, avec son propre visuel de partage (JPEG
+    // tiré de la couverture) et des données structurées « Article ».
+    const estReportage = file.startsWith("reportages/");
     const exige = {
-      ogType: "website", ogSite: "Ange Kevin Photographie", ogLocale: "fr_FR",
+      ogType: estReportage ? "article" : "website", ogSite: "Ange Kevin Photographie", ogLocale: "fr_FR",
       twitter: "summary_large_image", theme: "#0a0a0b",
     };
     for (const [cle, attendu] of Object.entries(exige)) {
       if (releve[cle] !== attendu) metadonnees.push(`${file} : ${cle} = ${releve[cle]}`);
+    }
+    if (estReportage) {
+      if (!/assets\/img\/reportages\/[^/]+\/[^/]+-og\.jpg$/.test(releve.ogImage ?? "")) {
+        metadonnees.push(`${file} : og:image ne pointe pas vers le visuel de partage du reportage (${releve.ogImage})`);
+      }
+      if (releve.ld?.["@type"] !== "Article" || !releve.ld?.headline) {
+        metadonnees.push(`${file} : JSON-LD Article attendu`);
+      }
     }
     for (const cle of ["ogTitre", "ogDescription", "ogImage", "ogImageAlt", "favicon"]) {
       if (!releve[cle]) metadonnees.push(`${file} : ${cle} absent`);
@@ -967,19 +1448,35 @@ try {
 
     const temp = await mkdtemp(join(tmpdir(), "akp-finalize-"));
     try {
-      for (const nom of [...PAGES, "robots.txt"]) await cp(nom, join(temp, nom));
+      for (const nom of [...PAGES, "robots.txt"]) {
+        await mkdir(join(temp, nom, ".."), { recursive: true });
+        await cp(nom, join(temp, nom));
+      }
 
-      await new Promise((resoudre, rejeter) => {
+      const finaliser = (base) => new Promise((resoudre, rejeter) => {
         const proc = spawn(
           process.execPath,
-          [join(process.cwd(), "tools", "finalize-urls.mjs"), FAUX_BASE],
+          [join(process.cwd(), "tools", "finalize-urls.mjs"), base],
           { cwd: temp, stdio: "ignore" }
         );
         proc.once("exit", (code) => (code === 0 ? resoudre() : rejeter(new Error(`finalize-urls.mjs : code ${code}`))));
         proc.once("error", rejeter);
       });
+      const ogImage = async (page) =>
+        (await readFile(join(temp, page), "utf8")).match(/<meta property="og:image" content="([^"]*)">/)?.[1];
+
+      await finaliser(FAUX_BASE);
 
       const probleme = [];
+      // og:image : chaque page garde son propre visuel, rendu absolu.
+      const ogAttendus = {
+        "index.html": `${FAUX_BASE}/assets/img/og-cover.png`,
+        [REPORTAGE]: `${FAUX_BASE}/assets/img/reportages/florent/dsc-0148-og.jpg`,
+      };
+      for (const [page, attendu] of Object.entries(ogAttendus)) {
+        const valeur = await ogImage(page);
+        if (valeur !== attendu) probleme.push(`${page} : og:image = ${valeur}`);
+      }
       for (const page of PAGES) {
         const html = await readFile(join(temp, page), "utf8");
         const url = page === "index.html" ? `${FAUX_BASE}/` : `${FAUX_BASE}/${page}`;
@@ -1008,8 +1505,21 @@ try {
       const robots = await readFile(join(temp, "robots.txt"), "utf8").catch(() => "");
       if (!robots.includes(`Sitemap: ${FAUX_BASE}/sitemap.xml`)) probleme.push("robots.txt : directive Sitemap absente ou incorrecte");
 
-      record("Finalisation des URL — canonical, og:url, sitemap et base cohérents (répertoire isolé)",
+      record("Finalisation des URL — canonical, og:url, og:image, sitemap et base cohérents, reportages compris (répertoire isolé)",
         probleme.length === 0, probleme.join(" ; "));
+
+      // Relancé avec une autre adresse : les URL sont remplacées, jamais empilées.
+      const AUTRE_BASE = "https://autre.invalid";
+      await finaliser(AUTRE_BASE);
+      const relance = [];
+      for (const [page, attendu] of Object.entries(ogAttendus)) {
+        const valeur = await ogImage(page);
+        if (valeur !== attendu.replace(FAUX_BASE, AUTRE_BASE)) relance.push(`${page} : og:image = ${valeur}`);
+      }
+      const canoniqueRep = (await readFile(join(temp, REPORTAGE), "utf8")).match(/<link rel="canonical" href="([^"]*)">/)?.[1];
+      if (canoniqueRep !== `${AUTRE_BASE}/${REPORTAGE}`) relance.push(`${REPORTAGE} : canonical = ${canoniqueRep}`);
+      record("Finalisation des URL — une seconde exécution remplace l'adresse sans empiler les segments",
+        relance.length === 0, relance.join(" ; "));
 
       const inchanges = [];
       for (const [nom, contenu] of avant) {
@@ -1104,6 +1614,9 @@ try {
       [...document.styleSheets].filter((f) => f.href).length === 3
         && getComputedStyle(document.body).backgroundColor === "rgb(10, 10, 11)"
         && document.querySelector(".brand__mark").naturalWidth > 0`));
+
+  record(`JavaScript — aucune exception ni console.error sur l'ensemble du parcours (${PAGES.length} pages)`,
+    erreursJs.length === 0, [...new Set(erreursJs)].slice(0, 8).join(" ; "));
 } finally {
   socket?.close();
   browser.kill();

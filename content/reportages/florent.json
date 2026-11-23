@@ -1,0 +1,270 @@
+{
+  "$schema": "./reportage.schema.json",
+  "slug": "florent",
+  "order": 1,
+  "title": "Florent",
+  "subtitle": "Une célébration, une histoire",
+  "seoTitle": "Florent, une célébration — Ange Kevin Photographie",
+  "category": "mariages",
+  "occasion": "Mariage traditionnel",
+  "location": "Côte d'Ivoire",
+  "description": "Florent, une célébration, une histoire : le reportage d'un mariage traditionnel en Côte d'Ivoire, raconté à la première personne.",
+  "cover": "dsc-0148",
+
+  "introTitle": "Comme un grand frère",
+  "intro": [
+    "J'ai rencontré Florent dans une église que je fréquentais en Côte d'Ivoire. J'y étais photographe lors des événements et des cérémonies.",
+    "Avec le temps, Florent est devenu comme un grand frère pour moi. Je le respecte pour son sérieux et pour son sens des responsabilités.",
+    "Lors de son mariage traditionnel, j'ai voulu mettre ce que je sais faire au service de cette journée particulière. Voici ce que j'en ai gardé : vingt-cinq photographies."
+  ],
+
+  "chapters": [
+    {
+      "id": "les-maries",
+      "title": "Les mariés",
+      "text": [
+        "Au milieu de la foule, des danses et des discours, il y a d'abord eux deux.",
+        "Florent en bleu roi, son épouse en blanc. Je les ai regardés simplement, côte à côte, tels qu'ils étaient ce jour-là."
+      ],
+      "frames": [
+        {
+          "layout": "gauche",
+          "photos": ["dsc-0009"],
+          "note": ["Le costume bleu roi, la pochette dorée, le regard droit vers l'objectif."]
+        },
+        { "layout": "pleine", "photos": ["dsc-0007"] },
+        {
+          "layout": "droite",
+          "photos": ["dsc-0057"],
+          "note": ["Certains instants ne demandent rien au photographe, sinon d'être là au bon moment."]
+        }
+      ]
+    },
+    {
+      "id": "les-tenues",
+      "title": "Les tenues",
+      "text": [
+        "Au fil de la journée, Florent et son épouse ont porté plusieurs tenues.",
+        "Pagnes tissés et colliers d'or, blanc rehaussé de bleu, dentelle dorée : chacune avait sa lumière, et je voulais les garder toutes."
+      ],
+      "frames": [
+        { "layout": "diptyque", "photos": ["dsc-0074", "dsc-0086"] },
+        {
+          "layout": "droite",
+          "photos": ["dsc-0149"],
+          "note": ["Le blanc, le bleu, et la canne."]
+        },
+        { "layout": "diptyque", "photos": ["dsc-0157", "dsc-0172"] },
+        { "layout": "pleine", "photos": ["dsc-0175"] }
+      ]
+    },
+    {
+      "id": "traditions-et-couleurs",
+      "title": "Traditions et couleurs",
+      "text": [
+        "Le jaune, le bleu, l'or.",
+        "Je n'ai rien eu à ajouter : les couleurs étaient déjà là, sur les tissus, les coiffes et les éventails."
+      ],
+      "frames": [
+        { "layout": "pleine", "photos": ["dsc-0123"] },
+        {
+          "layout": "gauche",
+          "photos": ["dsc-0088"],
+          "note": ["Les tissus, les colliers, les coiffes : chaque détail reprenait les couleurs de la fête."]
+        },
+        { "layout": "pleine", "photos": ["dsc-0131"] }
+      ]
+    },
+    {
+      "id": "invites-et-danses",
+      "title": "Les invités et les danses",
+      "text": [
+        "Une fête se lit aussi sur ceux qui l'entourent.",
+        "On a dansé, on a ri, on a posé pour moi entre deux pas."
+      ],
+      "frames": [
+        {
+          "layout": "droite",
+          "photos": ["dsc-0145"],
+          "note": ["Un éclat de rire, saisi au milieu de la danse."]
+        },
+        { "layout": "diptyque", "photos": ["dsc-0114", "dsc-0192"] },
+        {
+          "layout": "gauche",
+          "photos": ["dsc-0228"],
+          "note": ["Et Florent aussi a dansé."]
+        }
+      ]
+    },
+    {
+      "id": "les-voix",
+      "title": "Les voix",
+      "text": [
+        "Une cérémonie, ce sont aussi des voix.",
+        "Le pasteur pour bénir les mariés, les maîtres de cérémonie pour animer la fête, le protocole pour que tout s'enchaîne."
+      ],
+      "frames": [
+        { "layout": "pleine", "photos": ["dsc-0054"] },
+        { "layout": "diptyque", "photos": ["dsc-0110", "dsc-0224"] }
+      ]
+    },
+    {
+      "id": "le-gateau",
+      "title": "Le gâteau",
+      "text": [
+        "Pour finir, le gâteau : haut, blanc et bleu, éclairé d'étincelles.",
+        "Autour de lui, tout le monde s'est rapproché."
+      ],
+      "frames": [
+        { "layout": "diptyque", "photos": ["dsc-0232", "dsc-0244"] },
+        { "layout": "pleine", "photos": ["dsc-0248"] },
+        { "layout": "centre", "photos": ["dsc-0255"] },
+        { "layout": "pleine", "photos": ["dsc-0257"] }
+      ]
+    }
+  ],
+
+  "closing": [
+    "Vingt-cinq images pour une journée. Le reste appartient à ceux qui l'ont vécue."
+  ],
+
+  "photos": [
+    {
+      "id": "dsc-0148",
+      "file": "DSC_0148.jpg",
+      "alt": "Florent et son épouse assis côte à côte devant un décor blanc et doré : lui en tenue blanche à bande bleue, elle en robe jaune, souriante."
+    },
+    {
+      "id": "dsc-0009",
+      "file": "DSC_0009.jpg",
+      "alt": "Florent en costume bleu roi croisé, lunettes et pochette dorée, devant un décor blanc et or.",
+      "caption": "Florent"
+    },
+    {
+      "id": "dsc-0007",
+      "file": "DSC_0007.jpg",
+      "alt": "Florent en costume bleu roi et son épouse en robe blanche, assis côte à côte devant un décor blanc et doré.",
+      "caption": "Côte à côte"
+    },
+    {
+      "id": "dsc-0057",
+      "file": "DSC_0057.jpg",
+      "alt": "Florent, en costume bleu roi, embrasse son épouse en robe blanche, sous le regard d'un homme en costume bleu."
+    },
+    {
+      "id": "dsc-0074",
+      "file": "DSC_0074.jpg",
+      "alt": "Florent, coiffé d'un bandeau, et son épouse, en blouse de dentelle blanche, vêtus de pagnes tissés aux motifs orange, jaunes et bleus.",
+      "caption": "Pagnes tissés"
+    },
+    {
+      "id": "dsc-0086",
+      "file": "DSC_0086.jpg",
+      "alt": "Florent en pagne tissé aux couleurs vives sur une chemise de dentelle blanche, chaîne et bague dorées, lunettes teintées.",
+      "caption": "Colliers d'or"
+    },
+    {
+      "id": "dsc-0149",
+      "file": "DSC_0149.jpg",
+      "alt": "Florent assis, en tenue blanche à bande bleue et dorée, une canne sculptée à la main."
+    },
+    {
+      "id": "dsc-0157",
+      "file": "DSC_0157.jpg",
+      "alt": "L'épouse de Florent marche en souriant, en dentelle dorée et collier de perles, un pagne coloré sur le bras."
+    },
+    {
+      "id": "dsc-0172",
+      "file": "DSC_0172.jpg",
+      "alt": "L'épouse de Florent assise, en dentelle dorée, parée d'un large collier de perles dorées.",
+      "caption": "La dentelle dorée"
+    },
+    {
+      "id": "dsc-0175",
+      "file": "DSC_0175.jpg",
+      "alt": "Florent, coiffé d'un bandeau, et son épouse, assis côte à côte en dentelle dorée et colliers de perles."
+    },
+    {
+      "id": "dsc-0123",
+      "file": "DSC_0123.jpg",
+      "alt": "Florent, en tenue blanche à bande bleue, canne à la main, entre deux femmes en robes jaunes tenant des éventails de plumes."
+    },
+    {
+      "id": "dsc-0088",
+      "file": "DSC_0088.jpg",
+      "alt": "Une femme en dentelle dorée, colliers de perles et chapeau bleu, porte une corbeille bleue et blanche."
+    },
+    {
+      "id": "dsc-0131",
+      "file": "DSC_0131.jpg",
+      "alt": "Florent danse, canne à la main, entouré de femmes en tenues jaunes et bleues et d'autres invités.",
+      "caption": "La danse"
+    },
+    {
+      "id": "dsc-0145",
+      "file": "DSC_0145.jpg",
+      "alt": "Une femme en robe jaune et coiffe dorée, un éventail de plumes à la main, éclate de rire au milieu de la danse."
+    },
+    {
+      "id": "dsc-0114",
+      "file": "DSC_0114.jpg",
+      "alt": "Deux femmes en tenues assorties à rayures bleues posent dos à dos, l'une coiffée d'un chapeau bleu."
+    },
+    {
+      "id": "dsc-0192",
+      "file": "DSC_0192.jpg",
+      "alt": "Florent, en dentelle dorée et colliers de perles, pose aux côtés d'une femme en tenue blanche et bleue."
+    },
+    {
+      "id": "dsc-0228",
+      "file": "DSC_0228.jpg",
+      "alt": "Florent danse, une main levée, en chemise blanche, gilet doré et nœud papillon."
+    },
+    {
+      "id": "dsc-0054",
+      "file": "DSC_0054.jpg",
+      "alt": "Le pasteur, en costume fuchsia, bénit au micro Florent et son épouse inclinés devant lui, une main posée sur l'épaule de la mariée.",
+      "caption": "La bénédiction du pasteur"
+    },
+    {
+      "id": "dsc-0110",
+      "file": "DSC_0110.jpg",
+      "alt": "Les deux maîtres de cérémonie en veste sombre, debout côte à côte, l'un tenant un micro.",
+      "caption": "Les maîtres de cérémonie"
+    },
+    {
+      "id": "dsc-0224",
+      "file": "DSC_0224.jpg",
+      "alt": "À gauche, le responsable du protocole, des feuilles à la main ; à droite, un homme en tenue blanche prend la parole au micro.",
+      "caption": "Le protocole, à gauche"
+    },
+    {
+      "id": "dsc-0232",
+      "file": "DSC_0232.jpg",
+      "alt": "Florent debout, en chemise blanche, gilet doré et nœud papillon, les mains croisées.",
+      "caption": "Florent"
+    },
+    {
+      "id": "dsc-0244",
+      "file": "DSC_0244.jpg",
+      "alt": "L'épouse de Florent en robe de dentelle bleu roi ornée de fleurs, coiffée d'un bandeau doré.",
+      "caption": "Son épouse"
+    },
+    {
+      "id": "dsc-0248",
+      "file": "DSC_0248.jpg",
+      "alt": "Florent porte une main à son visage ; à côté de lui, son épouse en robe bleu roi sourit, une femme en robe à rayures bleues près d'elle."
+    },
+    {
+      "id": "dsc-0255",
+      "file": "DSC_0255.jpg",
+      "alt": "Le gâteau, blanc à cascade de roses bleues, éclairé d'étincelles, avec Florent et son épouse derrière lui.",
+      "caption": "Le gâteau"
+    },
+    {
+      "id": "dsc-0257",
+      "file": "DSC_0257.jpg",
+      "alt": "Le gâteau sous les étincelles, au centre d'une table bleue, entouré de personnes rassemblées autour de lui."
+    }
+  ]
+}

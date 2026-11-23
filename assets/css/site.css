@@ -10,6 +10,7 @@
      7. Hero
      8. Pages intérieures
      9. Langage de mouvement
+    10. Reportages (pages générées et cartes du portfolio)
    ========================================================================== */
 
 /* ---------------------------------------------------------------- 1. ENTÊTE */
@@ -41,19 +42,23 @@
 /* Repère d'observation de l'entête : évite un écouteur de défilement. */
 .header-sentinel { height: 1px; }
 
-.brand { align-items: center; display: flex; gap: var(--s-3); }
-.brand__mark { flex: none; width: 1.5rem; }
-.brand__text {
-  display: grid;
-  font-family: var(--ff-mono);
-  font-size: var(--fs-micro);
-  letter-spacing: var(--ls-mono);
-  line-height: 1.35;
-  text-transform: uppercase;
+/* Logo fourni par le photographe (assets/img/brand/), affiché tel quel, sans
+   retouche. Son rapport largeur / hauteur est de 3 : 1, et il comporte une
+   marge transparente autour du lettrage ; 9rem (11rem sur grand écran) le
+   rendent lisible sans alourdir l'entête. Ces largeurs sont reprises dans
+   l'attribut « sizes » de chaque page. */
+.brand { align-items: center; display: flex; flex: none; }
+.brand__mark {
+  background: none;
+  flex: none;
+  height: auto;
+  transition: opacity var(--dur-1) linear;
+  width: 9rem;
 }
-.brand__text span { transition: color var(--dur-1) linear; }
-.brand__text span:last-child { color: var(--c-text-3); }
-.brand:hover .brand__text span:last-child { color: var(--c-accent-text); }
+.brand:hover .brand__mark { opacity: 0.86; }
+@media (min-width: 64em) {
+  .brand__mark { width: 11rem; }
+}
 
 /* Amélioration progressive : la rangée de liens est l'état par défaut, y
    compris en mobile. L'interface dépendante de JavaScript (bouton + <dialog>)
@@ -133,8 +138,10 @@
      portfolio et le scroll-padding des ancres. Sans cela, le rail se glissait
      derrière l'entête et devenait inatteignable. La valeur est légèrement
      supérieure à la hauteur mesurée des deux lignes, afin que la hauteur
-     minimale la fixe exactement, quelles que soient les métriques de police. */
-  html:not(.js-menu) { --header-h: 7rem; }
+     minimale la fixe exactement, quelles que soient les métriques de police.
+     Avec le logo (3rem de haut à 9rem de large), les deux lignes mesurent
+     124 px : d'où 8rem. */
+  html:not(.js-menu) { --header-h: 8rem; }
   .site-header__inner { flex-wrap: wrap; row-gap: var(--s-1); }
   .nav { flex: 1 0 100%; }
   .nav__list {
@@ -329,10 +336,10 @@ html:has(.menu[open]) { overflow: hidden; }
   .plate__caption { display: grid; gap: var(--s-1); justify-content: start; }
 }
 
-/* Survol et focus : l'image se « relève » légèrement, le repère s'allume. */
+/* Survol : le repère s'allume. La photographie, elle, ne change jamais —
+   ni zoom, ni luminosité, ni contraste : ce que voit le visiteur est le
+   fichier du photographe, entier et fidèle. */
 @media (hover: hover) {
-  .plate__frame img { transition: transform var(--dur-3) var(--ease-print), filter var(--dur-3) var(--ease-print); }
-  .plate:hover .plate__frame img { filter: brightness(1.08) contrast(1.03); transform: scale(1.02); }
   .plate:hover .plate__ref { color: var(--c-accent-text); }
   .plate__ref { transition: color var(--dur-2) linear; }
 }
@@ -510,7 +517,7 @@ html:has(.rail) { scroll-padding-top: calc(var(--header-h) + 4.5rem); }
   top: calc(var(--header-h) - 1px);
   z-index: 10;
 }
-.rail ul {
+.rail :is(ul, ol) {
   display: flex;
   gap: var(--s-5);
   list-style: none;
@@ -519,7 +526,7 @@ html:has(.rail) { scroll-padding-top: calc(var(--header-h) + 4.5rem); }
   padding: 0;
   scrollbar-width: none;
 }
-.rail ul::-webkit-scrollbar { display: none; }
+.rail :is(ul, ol)::-webkit-scrollbar { display: none; }
 .rail a {
   color: var(--c-text-3);
   display: inline-block;
@@ -637,25 +644,26 @@ html.js [data-intro="5"] { transition-delay: calc(var(--stagger) * 4); }
 html.js [data-draw] { transform: scaleX(0); transform-origin: left; transition: transform var(--dur-4) var(--ease-draw); }
 html.js.is-ready [data-draw] { transform: scaleX(1); }
 
-/* « Développement » du tirage principal : l'image monte en densité pendant
-   que le voile se retire. Le voile ne couvre qu'un tiers de l'image, afin
-   que l'essentiel du tirage soit peint dès la première image et que le plus
-   grand rendu de contenu ne soit pas retardé. Sans script, l'image reste
-   simplement complète. */
-html.js.is-ready [data-develop] {
+/* Entrée du tirage principal : c'est le CONTENEUR qui apparaît, par fondu et
+   léger glissement. L'image n'est ni rognée (clip-path), ni zoomée (scale),
+   ni éclaircie ou assombrie (filter) : à chaque instant de l'animation, elle
+   est entière et fidèle au fichier. Le fondu part d'une opacité déjà
+   marquée, pour ne pas retarder le plus grand rendu de contenu. Sans script,
+   rien ne bouge. */
+html.js.is-ready .plate__frame[data-develop],
+html.js.is-ready .story-hero__plate .plate__frame {
   animation: develop var(--dur-3) var(--ease-print) both;
 }
 @keyframes develop {
-  from { clip-path: inset(0 0 32% 0); filter: brightness(0.42) contrast(0.85); transform: scale(1.03); }
-  60%  { filter: brightness(0.94) contrast(0.98); }
-  to   { clip-path: inset(0 0 0 0); filter: none; transform: none; }
+  from { opacity: 0.55; transform: translateY(0.75rem); }
+  to   { opacity: 1; transform: none; }
 }
 
 /* Révélation au défilement, pilotée par IntersectionObserver.
    L'état masqué est entièrement conditionné à « html.js » : sans JavaScript,
-   aucune de ces propriétés n'est appliquée. Rétablir la seule opacité ne
-   suffisait pas — « wipe » rogne l'image par clip-path et la décale par
-   transform, ce qui amputait couvertures et légendes. */
+   aucune de ces propriétés n'est appliquée. Une photographie n'est jamais
+   rognée pendant sa révélation : « wipe » ne fait que la décaler et la
+   fondre (le rognage par clip-path amputait couvertures et légendes). */
 html.js [data-reveal] {
   opacity: 0;
   transition: opacity var(--dur-3) var(--ease-print),
@@ -663,7 +671,7 @@ html.js [data-reveal] {
               clip-path var(--dur-3) var(--ease-draw);
 }
 html.js [data-reveal="rise"] { transform: translateY(1.5rem); }
-html.js [data-reveal="wipe"] { clip-path: inset(0 0 24% 0); transform: translateY(0.75rem); }
+html.js [data-reveal="wipe"] { transform: translateY(0.75rem); }
 /* Filet qui se trace à l'approche, prolongement du geste d'ouverture. */
 html.js [data-reveal="draw"] { opacity: 1; transform: scaleX(0); transform-origin: left; }
 html.js [data-reveal].is-revealed { clip-path: none; opacity: 1; transform: none; }
@@ -717,7 +725,407 @@ html.no-reveal [data-reveal] { clip-path: none; opacity: 1; transform: none; }
   html.js [data-intro],
   html.js [data-reveal] { opacity: 1 !important; transform: none !important; clip-path: none !important; }
   html.js [data-draw] { transform: none !important; }
-  html.js.is-ready [data-develop] { animation: none !important; }
-  .plate:hover .plate__frame img { transform: none; filter: none; }
+  html.js.is-ready .plate__frame[data-develop],
+  html.js.is-ready .story-hero__plate .plate__frame { animation: none !important; }
   ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; }
+}
+
+/* ---------------------------------------------------------- 10. REPORTAGES */
+
+/* Pages générées par tools/build-reportages.mjs depuis content/reportages/.
+   Principe : la photographie mène, le texte l'accompagne. Une image n'est
+   jamais recadrée — ni object-fit, ni rognage : le cadre du photographe et
+   ses filigranes restent intacts. Sa largeur est bornée par sa colonne ET
+   par une hauteur maximale exprimée en fraction de la fenêtre, de sorte
+   qu'une image verticale tienne entière à l'écran.
+
+   « --ratio » (largeur / hauteur) est posé sur chaque figure par le
+   générateur ; « --hmax » est la hauteur maximale. Les attributs « sizes »
+   reprennent exactement ces contraintes (voir tailles() dans le générateur) :
+   toute modification ici doit y être répercutée. */
+
+.story-photo {
+  --hmax: 88svh;
+  margin-inline: auto;
+  width: min(100%, calc(var(--hmax) * var(--ratio)));
+}
+
+/* Les images du récit ne réagissent pas au survol : elles ne sont pas des
+   liens, et le mouvement est réservé à la lecture. */
+@media (hover: hover) {
+  .story-photo:hover .plate__ref { color: var(--c-text-3); }
+}
+
+/* --- Ouverture ----------------------------------------------------------- */
+
+.story-hero { padding-block: clamp(var(--s-6), 6vw, var(--s-9)) clamp(var(--s-7), 7vw, var(--s-9)); }
+.story-hero__inner { display: grid; gap: clamp(var(--s-6), 5vw, var(--s-8)); }
+.story-hero__inner > * { min-width: 0; }
+.story-hero__text { align-content: end; display: grid; gap: var(--s-5); }
+
+/* Fil d'Ariane : lien autonome, sa cible doit atteindre 24 px. */
+.story-crumb {
+  color: var(--c-text-2);
+  display: inline-block;
+  padding-block: var(--s-1);
+  transition: color var(--dur-1) linear;
+}
+.story-crumb:hover { color: var(--c-accent-text); }
+
+.story-hero__title {
+  font-size: var(--fs-display);
+  letter-spacing: var(--ls-display);
+  line-height: var(--lh-tight);
+}
+.story-hero__subtitle {
+  color: var(--c-text-2);
+  display: block;
+  font-size: var(--fs-h2);
+  font-style: italic;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-top: var(--s-4);
+}
+
+.story-meta {
+  border-top: var(--bw) solid var(--c-line);
+  display: grid;
+  gap: var(--s-3) var(--s-5);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
+  padding-top: var(--s-4);
+}
+.story-meta dt { color: var(--c-text-3); }
+.story-meta dd { color: var(--c-text-2); margin: var(--s-1) 0 0; }
+
+.story-hero__plate { --hmax: 80svh; }
+
+@media (min-width: 64em) {
+  .story-hero__inner {
+    align-items: end;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.7fr);
+  }
+  .story-hero__plate { margin-right: 0; }
+}
+
+/* --- Introduction -------------------------------------------------------- */
+
+.story-intro { padding-block: var(--space-section); }
+.story-intro__inner { display: grid; gap: var(--s-6); }
+.story-intro__head { display: grid; gap: var(--s-4); }
+.story-intro__title { font-size: var(--fs-h1); line-height: 1; max-width: 14ch; }
+.story-intro__text { max-width: 38ch; }
+.story-intro__text p {
+  font-family: var(--ff-display);
+  font-size: var(--fs-lead);
+  line-height: 1.55;
+}
+.story-intro__text p + p { margin-top: var(--s-5); }
+
+@media (min-width: 64em) {
+  .story-intro__inner {
+    align-items: start;
+    column-gap: var(--s-9);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  }
+  .story-intro__text { padding-top: var(--s-7); }
+}
+
+/* --- Chapitres ----------------------------------------------------------- */
+
+/* Transition entre chapitres : un filet se trace sur toute la largeur, puis
+   le titre et le texte montent. Aucun défilement imposé : la lecture reste
+   continue et pilotée par le visiteur. */
+.story-chapter { padding-top: var(--space-section); }
+
+.story-chapter__head {
+  display: grid;
+  gap: var(--s-4);
+  margin-bottom: clamp(var(--s-7), 7vw, var(--s-10));
+}
+.story-chapter__head > * { min-width: 0; }
+.story-chapter__rule { margin-bottom: clamp(var(--s-5), 4vw, var(--s-7)); }
+.story-chapter__title { font-size: var(--fs-h1); line-height: 1; max-width: 16ch; }
+.story-chapter__text { color: var(--c-text-2); font-size: var(--fs-lead); line-height: 1.5; max-width: 40ch; }
+.story-chapter__text p + p { margin-top: var(--s-3); }
+
+@media (min-width: 64em) {
+  .story-chapter__head {
+    align-items: end;
+    column-gap: var(--s-6);
+    grid-template-columns: 7rem minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .story-chapter__rule { grid-column: 1 / -1; }
+  .story-chapter__head .folio { align-self: start; grid-area: 2 / 1 / span 2 / span 1; }
+  .story-chapter__head .eyebrow { grid-area: 2 / 2; }
+  .story-chapter__title { grid-area: 3 / 2; }
+  .story-chapter__text { grid-area: 3 / 3; justify-self: end; }
+}
+
+.story-frames { display: grid; gap: clamp(var(--s-8), 11vw, var(--s-11)); }
+
+/* --- Compositions -------------------------------------------------------- */
+
+/* Pleine largeur : l'image touche les bords en mobile, et ne dépasse jamais
+   92 % de la hauteur de la fenêtre ni 120rem. La légende garde la marge de
+   la page tant que l'image est collée aux bords, puis suit l'image. */
+.story-frame--pleine .story-photo {
+  --hmax: 92svh;
+  width: min(100%, calc(var(--hmax) * var(--ratio)), 120rem);
+}
+.story-frame--pleine .plate__caption {
+  padding-inline: max(0px, calc(var(--gutter) - (100vw - 100%) / 2));
+}
+
+/* Image et texte en vis-à-vis. Le texte est une note brève, en italique,
+   ancrée sur la base de l'image ; l'image se range contre le texte. */
+.story-note {
+  color: var(--c-text-2);
+  font-family: var(--ff-display);
+  font-size: var(--fs-h3);
+  font-style: italic;
+  line-height: 1.4;
+  max-width: 26ch;
+}
+.story-note::before {
+  background: var(--c-accent);
+  content: "";
+  display: block;
+  height: var(--bw);
+  margin-bottom: var(--s-4);
+  width: 3rem;
+}
+.story-note p + p { margin-top: var(--s-3); }
+
+.story-frame--gauche,
+.story-frame--droite,
+.story-frame--diptyque,
+.story-frame--centre { display: grid; gap: clamp(var(--s-5), 4vw, var(--s-8)); }
+:is(.story-frame--gauche, .story-frame--droite, .story-frame--diptyque, .story-frame--centre) > * { min-width: 0; }
+
+@media (min-width: 48em) {
+  .story-frame--gauche { align-items: end; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
+  .story-frame--droite { align-items: end; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+  .story-frame--gauche .story-photo { margin-right: 0; }
+  .story-frame--droite .story-photo { margin-left: 0; order: 2; }
+  .story-frame--droite .story-note { justify-self: end; text-align: right; }
+  .story-frame--droite .story-note::before { margin-left: auto; }
+
+  /* Diptyque : la seconde image descend d'un cran, comme sur une planche. */
+  .story-frame--diptyque { align-items: start; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .story-frame--diptyque > .story-photo:nth-child(1) { margin-right: 0; }
+  .story-frame--diptyque > .story-photo:nth-child(2) { margin-left: 0; margin-top: clamp(var(--s-7), 10vw, var(--s-11)); }
+  .story-frame--diptyque > .story-note { grid-column: 1 / -1; }
+}
+
+.story-frame--centre { justify-items: center; }
+.story-frame--centre .story-photo {
+  --hmax: 90svh;
+  width: min(100%, calc(var(--hmax) * var(--ratio)), 36rem);
+}
+
+/* --- Fin du reportage ---------------------------------------------------- */
+
+.story-end { display: grid; gap: var(--s-5); padding-top: var(--space-section); }
+.story-end__rule { margin-bottom: var(--s-4); }
+.story-end__text p {
+  font-family: var(--ff-display);
+  font-size: var(--fs-h2);
+  line-height: 1.2;
+  max-width: 24ch;
+}
+.story-end__nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-4) var(--s-6);
+  list-style: none;
+  margin: var(--s-5) 0 0;
+  padding: 0;
+}
+/* Liens autonomes : cible d'au moins 24 px (WCAG 2.5.8). */
+.story-end__nav .link { display: inline-block; padding-block: var(--s-1); }
+
+/* Sommaire des chapitres : rail collant du portfolio, numéroté. */
+.rail__num { color: var(--c-text-3); margin-right: var(--s-2); }
+.rail a[aria-current] .rail__num { color: var(--c-accent-text); }
+
+/* --- Cartes de reportage (portfolio) ------------------------------------- */
+
+.reportage-list { display: grid; gap: clamp(var(--s-7), 8vw, var(--s-10)); }
+.reportage-card { display: grid; gap: var(--s-5); position: relative; }
+.reportage-card > * { min-width: 0; }
+.reportage-card__media img { width: 100%; }
+.reportage-card__body { align-content: end; display: grid; gap: var(--s-3); }
+.reportage-card__title { font-size: var(--fs-h1); line-height: 1; }
+/* Lien étiré : toute la carte est cliquable, mais un seul lien est annoncé
+   et atteint au clavier. Le repère de focus entoure la carte entière. */
+.reportage-card__title a::after { content: ""; inset: 0; position: absolute; }
+.reportage-card__title a:focus-visible { outline: none; }
+.reportage-card:has(a:focus-visible) { outline: 2px solid var(--c-focus); outline-offset: 6px; }
+.reportage-card__subtitle {
+  color: var(--c-text-2);
+  font-family: var(--ff-display);
+  font-size: var(--fs-h3);
+  font-style: italic;
+}
+.reportage-card__summary { color: var(--c-text-2); max-width: 44ch; }
+.reportage-card__meta { color: var(--c-accent-text); margin-top: var(--s-3); }
+
+/* Au survol, la carte réagit par son titre : la photographie reste intacte. */
+@media (hover: hover) {
+  .reportage-card:hover .reportage-card__title a { color: var(--c-accent-text); }
+}
+
+@media (min-width: 48em) {
+  .reportage-card {
+    align-items: end;
+    gap: var(--s-7);
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  }
+}
+
+/* ------------------------------ 11. REPORTAGE : TYPOGRAPHIE ET MOUVEMENT */
+
+/* Typographie éditoriale. La capitale espacée en chasse fixe reste la voix
+   de l'interface (menu, pages courantes) ; dans un récit, elle sonnait
+   mécanique. Le reportage passe donc à la serif de lecture déjà utilisée par
+   les titres : bas de casse, italique pour les légendes et libellés, chiffres
+   elzéviriens. Même pile, même palette : aucune police n'est téléchargée. */
+.story {
+  font-kerning: normal;
+  font-variant-ligatures: common-ligatures contextual;
+}
+.story .mono,
+.story .eyebrow {
+  font-family: var(--ff-display);
+  font-size: var(--fs-small);
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+.story .eyebrow {
+  color: var(--c-text-2);
+  font-size: 1.0625rem;
+  font-style: italic;
+}
+
+/* Informations du reportage : libellé en italique discret, valeur en clair. */
+.story-meta { gap: var(--s-4) var(--s-6); }
+.story-meta dt { color: var(--c-text-3); font-size: var(--fs-small); font-style: italic; }
+.story-meta dd {
+  color: var(--c-text);
+  font-size: 1.1875rem;
+  line-height: 1.3;
+  margin-top: 0.125rem;
+}
+
+/* Sommaire : titres de chapitres lisibles, numéros elzéviriens en accent. */
+.story-rail a {
+  font-family: var(--ff-display);
+  font-size: 1.0625rem;
+  letter-spacing: 0.005em;
+  text-transform: none;
+}
+.story-rail ol { gap: var(--s-6); }
+.story-rail .rail__num {
+  color: var(--c-accent-text);
+  font-size: 0.9375rem;
+  font-style: italic;
+  font-variant-numeric: oldstyle-nums;
+  margin-right: var(--s-2);
+}
+.story-rail a::after {
+  background: var(--c-accent);
+  bottom: 0;
+  content: "";
+  height: 2px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-2) var(--ease-draw);
+}
+.story-rail a[aria-current]::after { transform: scaleX(1); }
+.story-rail a[aria-current] { color: var(--c-text); }
+
+/* Légendes : libellé en italique, numéro de vue en chiffres elzéviriens. */
+.story .plate__caption { font-size: 0.9375rem; padding-top: var(--s-3); }
+.story .plate__caption b { color: var(--c-text-2); font-style: italic; }
+.story .plate__ref {
+  color: var(--c-text-3);
+  font-size: var(--fs-small);
+  font-variant-numeric: oldstyle-nums;
+}
+
+/* Textes de lecture : mesure confortable, coupes de lignes soignées. */
+.story-intro__text p { font-size: clamp(1.1875rem, 1.1rem + 0.5vw, 1.5rem); line-height: 1.6; text-wrap: pretty; }
+.story-intro__text p:not(:first-child) { color: var(--c-text-2); }
+.story-chapter__text {
+  font-family: var(--ff-display);
+  font-size: clamp(1.1875rem, 1.1rem + 0.45vw, 1.4375rem);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+.story-chapter__text p + p { margin-top: var(--s-4); }
+.story-note { font-size: clamp(1.1875rem, 1.1rem + 0.45vw, 1.5rem); line-height: 1.45; max-width: 28ch; text-wrap: pretty; }
+.story-hero__title,
+.story-hero__subtitle,
+.story-chapter__title,
+.story-intro__title { font-weight: 400; text-wrap: balance; }
+.story-chapter__title,
+.story-intro__title { letter-spacing: -0.02em; }
+.story-end__text p { text-wrap: balance; }
+
+/* Chapitre en cours : son numéro et son repère s'allument. Posé par nav.js
+   (attribut data-current sur la section lue). */
+.story-chapter .folio { transition: -webkit-text-stroke-color var(--dur-3) var(--ease-print); }
+.story-chapter[data-current] .folio { -webkit-text-stroke-color: var(--c-accent); }
+.story-chapter .eyebrow { transition: color var(--dur-3) var(--ease-print); }
+.story-chapter[data-current] .eyebrow { color: var(--c-accent-text); }
+
+/* --- Mouvement du récit ---------------------------------------------------
+
+   Pourquoi ce bloc : mesuré dans Chrome, la révélation d'origine fonctionnait
+   (opacité 0 → 1, classe « is-revealed », aucune erreur) mais restait peu
+   perceptible — décalage de 1,5 rem, 0,68 s, légendes et notes immobiles.
+   Ici : décalage plus net, durée plus longue, texte et image en cascade.
+
+   Tout est conditionné à « html.js » et à l'absence de « no-reveal » : sans
+   script, ou si le module n'a pas démarré, rien n'est masqué. Sous
+   « prefers-reduced-motion: reduce », ce bloc ne s'applique pas du tout.
+   Seuls opacity et transform sont animés : aucune mise en page recalculée.
+   Les images ne subissent ni zoom, ni rognage, ni filtre : elles se
+   dévoilent par fondu et léger glissement, et sont entières à l'arrivée. */
+@media (prefers-reduced-motion: no-preference) {
+  html.js:not(.no-reveal) .story [data-reveal] {
+    transition-duration: 1000ms, 1000ms, 0ms;
+    transition-timing-function: var(--ease-print);
+  }
+  html.js:not(.no-reveal) .story [data-reveal="rise"] { transform: translateY(2.25rem); }
+  html.js:not(.no-reveal) .story [data-reveal="wipe"] { clip-path: none; transform: translateY(3rem); }
+  html.js:not(.no-reveal) .story [data-reveal="draw"] {
+    transition-duration: 1400ms;
+    transition-timing-function: var(--ease-draw);
+  }
+  html.js:not(.no-reveal) .story [data-reveal].is-revealed { clip-path: none; opacity: 1; transform: none; }
+
+  /* Cascade : le texte suit son titre, la note suit son image. */
+  html.js:not(.no-reveal) .story-chapter__text[data-reveal] { transition-delay: 180ms; }
+  html.js:not(.no-reveal) .story-intro__text[data-reveal] { transition-delay: 160ms; }
+  html.js:not(.no-reveal) .story-note[data-reveal] { transition-delay: 220ms; }
+
+  /* La légende apparaît un instant après l'image. */
+  .story .plate__caption {
+    transition: opacity 900ms var(--ease-print) 380ms, transform 900ms var(--ease-print) 380ms;
+  }
+  html.js:not(.no-reveal) .story-photo[data-reveal]:not(.is-revealed) .plate__caption {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+
+/* Mobile : décalages et durées réduits, proportionnés à l'écran. */
+@media (prefers-reduced-motion: no-preference) and (max-width: 47.99em) {
+  html.js:not(.no-reveal) .story [data-reveal="rise"] { transform: translateY(1.5rem); }
+  html.js:not(.no-reveal) .story [data-reveal="wipe"] { transform: translateY(2rem); }
+  html.js:not(.no-reveal) .story [data-reveal] { transition-duration: 800ms, 800ms, 0ms; }
 }
